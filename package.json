@@ -1,12 +1,12 @@
 {
   "name": "zuyong",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "python3 -m http.server 8080",
     "test": "node --test test/lib.test.mjs",
-    "test:shell": "node test/shell.smoke.mjs && node test/cleanup.smoke.mjs && node test/back.smoke.mjs",
+    "test:shell": "node test/shell.smoke.mjs && node test/cleanup.smoke.mjs && node test/back.smoke.mjs && node test/errors.smoke.mjs",
     "check": "bash scripts/check-arch.sh && bash scripts/check-arch.test.sh",
     "www": "node scripts/build-www.mjs",
     "android": "node scripts/build-www.mjs && npx cap sync android",
