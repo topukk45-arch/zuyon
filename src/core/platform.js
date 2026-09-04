@@ -115,11 +115,18 @@ export function onBack(handler) {
   // 需要接管的只有安卓,别给不需要的平台加机关。
   if (!App) return () => {};
 
+  // Capacitor 6 的 addListener 直接返回 handle;5 及更早返回 Promise<handle>。
+  // 写死任何一种都会在另一种上炸,而且是在 start() 里同步炸 ——
+  // 表现为整个外壳不启动、全白。两种都收下。
   let remove = null;
-  App.addListener('backButton', () => {
+  const ret = App.addListener('backButton', () => {
     if (!handler()) App.exitApp();
-  }).then((h) => { remove = h; });
-  return () => remove?.remove();
+  });
+
+  if (typeof ret?.then === 'function') ret.then((h) => { remove = h; });
+  else remove = ret;
+
+  return () => remove?.remove?.();
 }
 
 /** 分享。不可用时返回 false,调用方据此降级为复制。 */
