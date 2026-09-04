@@ -113,13 +113,27 @@ export default {
 
 **首次要先配四个 Secret**(Settings → Secrets and variables → Actions):
 
-    KEYSTORE_BASE64      keystore 文件的 base64
+    KEYSTORE_BASE64      keystore 文件的 base64,一整行
     KEYSTORE_PASSWORD
     KEY_ALIAS
     KEY_PASSWORD
 
-跟「记问」用的是同一套做法,同一个 keystore 可以签多个应用,
-把那四个值原样填过来就行(GitHub Secret 是按仓库存的,得重填一遍)。
+生成 base64,PowerShell 里:
+
+    [Convert]::ToBase64String([IO.File]::ReadAllBytes("D:\路径\你的.keystore")) | Set-Clipboard
+
+**不要用 `certutil -encode`**,它会加 `-----BEGIN CERTIFICATE-----` 头尾,
+解码出来不是合法 keystore,gradle 会报 `Tag number over 30 is not supported`
+—— 那是 ASN.1 解析失败,意思是文件内容不对,不是密码错。
+(流水线现在会自动剥掉这类头尾,但一开始就转对更省事。)
+
+没有现成 keystore 就新建一个,足用 跟「记问」不必共用:
+
+    keytool -genkeypair -v -keystore zuyong.keystore -alias zuyong \
+      -keyalg RSA -keysize 2048 -validity 10000
+
+流水线在编译前会先把 keystore 解出来用 `keytool -list` 验一遍,
+base64 坏了、密码不对、别名不存在,三种情况分别报清楚,不用从 gradle 的报错里猜。
 
 **为什么非要固定签名**:不配的话每次 CI 出的 debug 包签名都不同,
 装第二次要先卸载,`localStorage` 里的取色历史、最近使用、调色台状态全丢。

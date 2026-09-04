@@ -38,13 +38,51 @@ jobs:
       - name: 生成 www 并同步到原生工程
         run: npm run android
 
-      - name: 还原签名 keystore
+      - name: 还原并校验签名 keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
         run: |
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/baofu.keystore"
+          set -e
+          KS="$RUNNER_TEMP/zuyong.keystore"
+
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::error::Secret KEYSTORE_BASE64 是空的。四个签名 Secret 都要配，见 README。"
+            exit 1
+          fi
+
+          # 容错：去掉换行，也去掉 certutil -encode 会加的 BEGIN/END 头尾
+          printf '%s' "$KEYSTORE_BASE64" \
+            | tr -d '\r\n' \
+            | sed 's/-----[A-Z ]*-----//g' \
+            | base64 -d > "$KS" 2>/dev/null || {
+              echo "::error::KEYSTORE_BASE64 不是合法的 base64。PowerShell 用："
+              echo "  [Convert]::ToBase64String([IO.File]::ReadAllBytes(\"路径\\你的.keystore\")) | Set-Clipboard"
+              echo "  不要用 certutil -encode，它会加头尾标记。"
+              exit 1
+            }
+
+          echo "keystore 大小：$(stat -c%s "$KS") 字节"
+
+          # 编译前就验一次，别等 gradle 从 ASN.1 报错里暴露问题
+          if ! keytool -list -keystore "$KS" -storepass "$KEYSTORE_PASSWORD" > /tmp/ks.txt 2>&1; then
+            echo "::error::keystore 读不出来。要么 base64 转坏了，要么 KEYSTORE_PASSWORD 不对。"
+            sed 's/^/  /' /tmp/ks.txt
+            exit 1
+          fi
+
+          if ! grep -q "^$KEY_ALIAS," /tmp/ks.txt; then
+            echo "::error::keystore 里没有别名 $KEY_ALIAS。里面实际有："
+            grep ',.*PrivateKeyEntry' /tmp/ks.txt | cut -d, -f1 | sed 's/^/  /'
+            exit 1
+          fi
+
+          echo "✓ keystore 可用，别名 $KEY_ALIAS 存在"
 
       - name: 编译 APK（固定签名，可覆盖升级）
         env:
-          KEYSTORE_FILE: ${{ runner.temp }}/baofu.keystore
+          KEYSTORE_FILE: ${{ runner.temp }}/zuyong.keystore
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
