@@ -5,6 +5,32 @@
 
 ---
 
+## 0.4
+
+修 0.3 引入的白屏。
+
+`Capacitor 6` 的 `App.addListener` **直接返回 handle**,不返回 Promise。
+0.2 里我按更早版本的 API 写了 `.then()`,于是 `start()` 在注册返回处理器
+那一步同步抛异常,整个外壳没启动 —— 表现就是所有页面全白。
+
+- `onBack` 同时接受两种返回形态(handle 与 Promise\<handle\>)
+- 外壳给 `onBack` 包一层 try:它是可选增强,挂了顶多返回键退化成系统默认,
+  不该让整个应用起不来
+- `test/back.smoke.mjs` 现在跑三种情形:浏览器、Capacitor 6 同步 handle、
+  Capacitor 5 Promise;另加一条「插件直接抛异常时外壳仍要启动」
+
+### 为什么测试没拦住
+
+因为 0.2 的 mock 里我也写的是 Promise 形态 —— 测试验证的是我的错误假设,
+不是真实 API。**mock 是自己写的,它不会告诉你假设错了。**
+凡是跨端 API,mock 要覆盖所有已知形态,否则测试只是把假设复述一遍。
+
+不过 0.3 的诊断是有效的:手机上直接显示了
+`TypeError: App.addListener(...).then is not a function` 和调用栈,
+一眼定位。没有那一版,这个问题还得靠连线猜。
+
+---
+
 ## 0.3
 
 装成 APK 后工具页空白,但看不到原因 —— 因为 `toolhost.js` 里那个
