@@ -44,7 +44,17 @@ if [ -n "$inline" ]; then
   fail=1
 fi
 
-echo "[8] 单文件超过 300 行就停下来想"
+echo "[8] 版本号两处必须一致（散在两处一定会漂移）"
+JS_VER=$(grep -oE "VERSION = '[^']+'" src/core/version.js | cut -d"'" -f2)
+GRADLE_VER=$(grep -oE 'versionName "[^"]+"' android/app/build.gradle | cut -d'"' -f2)
+if [ "$JS_VER" != "$GRADLE_VER" ]; then
+  echo "  ✗ src/core/version.js 是 $JS_VER，android/app/build.gradle 是 $GRADLE_VER"
+  fail=1
+else
+  echo "  版本 $JS_VER"
+fi
+
+echo "[9] 单文件超过 300 行就停下来想"
 for f in "${TOOLS[@]}"; do
   n=$(wc -l < "$f")
   [ "$n" -gt 300 ] && echo "  ! $f 有 $n 行 —— 多半是两个工具,或有段逻辑该下沉到 lib/"
