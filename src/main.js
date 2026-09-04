@@ -4,7 +4,15 @@
  * 会挡掉内联脚本,表现是一片纯白,而且很不容易看出是自己挡了自己。 */
 
 import { start } from './shell/app.js';
+import { installGlobalErrorHandler, errorPanel } from './shell/errors.js';
 
 const root = document.getElementById('app');
 root.textContent = '';        // 清掉 index.html 里的启动失败兜底
-start(root);
+
+installGlobalErrorHandler(root);
+
+try {
+  start(root);
+} catch (e) {
+  root.append(errorPanel('外壳没能启动', e));
+}
