@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<!-- viewport-fit=cover 是安全区生效的前提,少了它 env() 全是 0 -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!--
+  不联网是硬约束,顺手用 CSP 焊死:connect-src 'none' 让任何 fetch / XHR / WebSocket
+  当场失败,default-src 'self' 挡掉一切外部资源。手滑引个 CDN 字体只会白屏,不会悄悄发出去。
+
+  style-src 带 'unsafe-inline' 是必需的:DOM 上的 style="" 属性(包括 setAttribute
+  设的)受 style-src 管,不放开会让所有工具的布局塌掉。它不带来任何网络能力,
+  「不联网」的保证在 default-src 和 connect-src 上,不在这一条。
+
+  script-src 不放 'unsafe-inline',所以启动脚本必须是独立文件 src/main.js,
+  不能内联写在这里 —— 内联会被自己的 CSP 挡掉,表现是纯白页、控制台一条报错。
+-->
+<meta http-equiv="Content-Security-Policy" content="
+  default-src 'self';
+  script-src 'self';
+  style-src 'self' 'unsafe-inline';
+  img-src 'self' data: blob:;
+  font-src 'self';
+  connect-src 'none';
+  object-src 'none';
+  base-uri 'self';
+  form-action 'none'">
+<title>足用</title>
+<link rel="stylesheet" href="src/styles/reset.css">
+<link rel="stylesheet" href="src/styles/theme.css">
+<link rel="stylesheet" href="src/styles/layout.css">
+</head>
+<body>
+<!-- 这段是启动失败时的兜底。main.js 跑起来的第一件事就是清掉它,
+     所以你看见它,就说明脚本没跑 —— 而不是对着一片空白猜。 -->
+<div id="app">
+  <div style="padding:24px;max-width:32em;margin:0 auto">
+    <p style="font-weight:600">没有启动起来。</p>
+    <p style="font-size:.875rem;line-height:1.7">
+      多半是直接双击了 index.html。动态 import 在 file:// 下会被拦掉,
+      要在项目目录里起一个本地服务器,再从 http://localhost:8080/ 打开。
+    </p>
+    <p style="font-size:.875rem">按 F12 看 Console,那里有确切原因。</p>
+  </div>
+</div>
+<script type="module" src="src/main.js"></script>
+</body>
+</html>

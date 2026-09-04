@@ -1,0 +1,255 @@
+/* 布局契约 · 骨架层
+   #app 是唯一的定位上下文。工具只往 .tool-body 里塞东西,
+   顶栏和底部操作条由外壳提供,工具不自己造。 */
+
+#app {
+  /* 折叠屏 / 21:9:居中限宽,不假设「手机就是一列」 */
+  max-width: 720px;
+  margin-inline: auto;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  padding-left: var(--safe-left);
+  padding-right: var(--safe-right);
+}
+
+/* ── 顶栏 ───────────────────────────── */
+.bar {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  padding: var(--s3) var(--s4);
+  padding-top: calc(var(--s3) + var(--safe-top));
+  border-bottom: 1px solid var(--paper-3);
+  background: var(--paper);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.bar__title {
+  font-size: var(--t-lg);
+  font-weight: 600;
+  flex: 1;
+  min-width: 0;
+}
+
+.bar__back {
+  margin-inline-start: calc(var(--s3) * -1);
+  padding-inline: var(--s3);
+  display: grid;
+  place-items: center;
+  font-size: var(--t-lg);
+  color: var(--ink-2);
+}
+
+/* 「无网络权限」角标。放首页顶栏,不藏进关于页 */
+.offline-badge {
+  font-size: var(--t-xs);
+  color: var(--accent);
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  padding: 2px var(--s2);
+  white-space: nowrap;
+}
+
+/* ── 可滚动主体 ──────────────────────── */
+.scroll {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: var(--s4);
+  /* 底部固定元素必须带安全区内边距 */
+  padding-bottom: calc(var(--s6) + var(--safe-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+}
+
+/* ── 搜索 ───────────────────────────── */
+.search {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  background: var(--paper-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  padding-inline: var(--s3);
+}
+.search:focus-within { border-color: var(--accent); }
+
+.search input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: none;
+  outline: none;
+  padding-block: var(--s3);
+  min-height: 44px;
+}
+.search input::placeholder { color: var(--ink-3); }
+
+/* 粘贴内容后的直达建议 */
+.sniff {
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  padding: var(--s3) var(--s4);
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  text-align: start;
+  width: 100%;
+  color: var(--accent);
+}
+.sniff strong { font-weight: 600; }
+.sniff span {
+  color: var(--ink-2);
+  font-size: var(--t-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  flex: 1;
+}
+
+/* ── 工具清单 ───────────────────────── */
+.section-label {
+  font-size: var(--t-sm);
+  color: var(--ink-3);
+  margin-bottom: var(--s2);
+}
+
+.tool-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.tool-item {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+  width: 100%;
+  text-align: start;
+  padding: var(--s3) var(--s2);
+  border-radius: var(--radius-sm);
+  border-bottom: 1px solid var(--paper-3);
+}
+.tool-item:last-child { border-bottom: none; }
+.tool-item:active { background: var(--paper-2); }
+
+.tool-item__name { font-size: var(--t-base); }
+.tool-item__desc {
+  font-size: var(--t-sm);
+  color: var(--ink-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tool-item__text { min-width: 0; flex: 1; }
+
+.chips { display: flex; flex-wrap: wrap; gap: var(--s2); }
+.chip {
+  border: 1px solid var(--paper-3);
+  border-radius: 999px;
+  padding: var(--s2) var(--s4);
+  font-size: var(--t-sm);
+  min-height: 40px;
+}
+.chip:active { background: var(--paper-2); }
+
+.empty {
+  color: var(--ink-3);
+  font-size: var(--t-sm);
+  padding: var(--s5) 0;
+}
+
+/* ── 工具容器与通用组件 ──────────────── */
+.tool-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+}
+
+.field { display: flex; flex-direction: column; gap: var(--s2); }
+.field > label { font-size: var(--t-sm); color: var(--ink-2); }
+
+.input, .textarea {
+  width: 100%;
+  background: var(--paper-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  padding: var(--s3);
+  min-height: 44px;
+  outline: none;
+  font-family: var(--mono);
+  font-size: var(--t-sm);
+  resize: vertical;
+}
+.input:focus, .textarea:focus { border-color: var(--accent); }
+.textarea { min-height: 7em; }
+
+.result {
+  background: var(--paper-2);
+  border-radius: var(--radius);
+  padding: var(--s3);
+  font-family: var(--mono);
+  font-size: var(--t-sm);
+  white-space: pre-wrap;
+  word-break: break-all;
+  min-height: 3em;
+}
+.result[data-empty='true'] { color: var(--ink-3); }
+.result[data-error='true'] { color: var(--warn); }
+
+.row { display: flex; gap: var(--s2); flex-wrap: wrap; }
+
+.btn {
+  border: 1px solid var(--paper-3);
+  border-radius: var(--radius-sm);
+  padding: var(--s2) var(--s4);
+  font-size: var(--t-sm);
+}
+.btn:active { background: var(--paper-2); }
+.btn--primary {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-color: var(--accent);
+}
+
+/* 底部操作条:不用 fixed,靠 flex 顺序留在末尾,键盘弹出时不会被顶飞 */
+.actions {
+  display: flex;
+  gap: var(--s2);
+  padding: var(--s3) var(--s4);
+  padding-bottom: calc(var(--s3) + var(--safe-bottom));
+  border-top: 1px solid var(--paper-3);
+  background: var(--paper);
+}
+.actions .btn { flex: 1; }
+
+.toast {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(var(--s6) + var(--safe-bottom));
+  background: var(--ink);
+  color: var(--paper);
+  font-size: var(--t-sm);
+  padding: var(--s2) var(--s4);
+  border-radius: 999px;
+  z-index: 100;
+  pointer-events: none;
+}
+
+.u-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 宽屏允许两列,不是把手机布局拉长 */
+@media (min-width: 600px) {
+  .tool-list { display: grid; grid-template-columns: 1fr 1fr; column-gap: var(--s4); }
+}

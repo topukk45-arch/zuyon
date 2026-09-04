@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 跟 theme.css 的 token 对齐,冷启动到首屏之间不会闪色 -->
+    <color name="colorPrimary">#EFEDE4</color>
+    <color name="colorPrimaryDark">#EFEDE4</color>
+    <color name="colorAccent">#2F6350</color>
+</resources>

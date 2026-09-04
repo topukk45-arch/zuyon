@@ -1,0 +1,12 @@
+{
+  "appId": "com.baofu.zuyong",
+  "appName": "足用",
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": false,
+    "backgroundColor": "#EFEDE4"
+  },
+  "server": {
+    "androidScheme": "https"
+  }
+}
