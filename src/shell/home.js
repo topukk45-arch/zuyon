@@ -6,6 +6,7 @@ import { el, clear } from '../ui/index.js';
 import { search, sniff } from './search.js';
 import { openTool } from './router.js';
 import { shellStore } from '../core/storage.js';
+import { VERSION } from '../core/version.js';
 
 export function renderHome(scroll, ctx) {
   const box = el('input', {
@@ -71,6 +72,8 @@ function recentAndAll(ctx) {
       el('p', { class: 'section-label' }, `全部工具 · ${tools.length}`),
       list(tools),
     ),
+    el('p', { class: 'section-label', style: 'text-align:center;margin-top:var(--s5)' },
+      `足用 ${VERSION}`),
   );
   return frag;
 }
