@@ -2,7 +2,7 @@
  * 漏一个 paste 监听不会报错,只会在你用了十分钟后开始互相打架。 */
 import { JSDOM } from 'jsdom';
 const dom = new JSDOM('<div id="app"></div>', { url: 'http://localhost/', pretendToBeVisual: true });
-for (const k of ['window','document','localStorage','HashChangeEvent','Blob','URL','DocumentFragment','location','Event','Node','Image','FileReader'])
+for (const k of ['window','document','localStorage','HashChangeEvent','Blob','URL','DocumentFragment','location','Event','Node','Image','FileReader','history','PopStateEvent'])
   globalThis[k] = k === 'window' ? dom.window : dom.window[k];
 Object.defineProperty(globalThis,'navigator',{value:dom.window.navigator,configurable:true});
 

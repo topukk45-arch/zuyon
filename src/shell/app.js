@@ -3,6 +3,7 @@
 import { el, clear } from '../ui/index.js';
 import { byId } from '../core/registry.js';
 import { parse, onChange, takePayload, home } from './router.js';
+import { onBack } from '../core/platform.js';
 import { renderHome } from './home.js';
 import { renderTool } from './toolhost.js';
 
@@ -38,6 +39,13 @@ export function start(root) {
       cleanup = await renderTool(scroll, route.id, takePayload(), ctx);
     }
   }
+
+  // 接管系统返回:在工具里就回首页,已经在首页才允许退出
+  onBack(() => {
+    if (parse().name === 'home') return false;
+    home();
+    return true;
+  });
 
   onChange(render);
   render();

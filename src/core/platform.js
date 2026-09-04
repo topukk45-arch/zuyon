@@ -94,6 +94,34 @@ export async function saveFile(data, filename) {
   return true;
 }
 
+/**
+ * 接管系统返回(安卓的返回手势和实体返回键)。
+ *
+ * 不接管的话,WebView 的默认行为是直接退出应用 —— 用户在某个工具里往回划,
+ * 期待的是回上一层,结果整个应用没了。这是装成应用之后最刺眼的一处
+ * 「网页习惯」,必须在外壳层解决。
+ *
+ * @param {() => boolean} handler 返回 true 表示已处理,返回 false 表示该退出了
+ * @returns {() => void} 取消注册
+ */
+export function onBack(handler) {
+  const App = g.Capacitor?.Plugins?.App;
+
+  // 浏览器里不接管。hash 路由天然进了浏览历史,浏览器自己的后退就是对的。
+  //
+  // 曾经在这里写过一个 popstate 的兜底,结果是个真 bug:
+  // 浏览器里 location.hash = x 会同时触发 hashchange 和 popstate,
+  // 于是每次进工具都被自己的返回处理器立刻弹回首页。
+  // 需要接管的只有安卓,别给不需要的平台加机关。
+  if (!App) return () => {};
+
+  let remove = null;
+  App.addListener('backButton', () => {
+    if (!handler()) App.exitApp();
+  }).then((h) => { remove = h; });
+  return () => remove?.remove();
+}
+
 /** 分享。不可用时返回 false,调用方据此降级为复制。 */
 export async function share({ title, text, url } = {}) {
   if (!can('share')) return false;
