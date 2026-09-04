@@ -1,0 +1,73 @@
+name: 构建安卓 APK
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 拉取代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: 安装 JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: 安装依赖
+        run: npm install
+
+      # 出包前先把该跑的跑一遍,不合格就不出包
+      - name: 纯函数测试
+        run: npm test
+
+      - name: 架构检查
+        run: npm run check
+
+      - name: 外壳链路冒烟（jsdom）
+        run: npm run test:shell
+
+      - name: 生成 www 并同步到原生工程
+        run: npm run android
+
+      - name: 还原签名 keystore
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/baofu.keystore"
+
+      - name: 编译 APK（固定签名，可覆盖升级）
+        env:
+          KEYSTORE_FILE: ${{ runner.temp }}/baofu.keystore
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      # 「不联网」不能只是一句注释。在最终合并产物上验一次。
+      - name: 核对合并后的 manifest 没有 INTERNET 权限
+        run: |
+          MERGED=$(find android/app/build/intermediates -name AndroidManifest.xml -path '*merged_manifest*' | head -1)
+          echo "合并后的 manifest：$MERGED"
+          cat "$MERGED"
+          if grep -q 'android.permission.INTERNET' "$MERGED"; then
+            echo "::error::合并后的 manifest 里出现了 INTERNET 权限，不联网的承诺破了"
+            exit 1
+          fi
+          echo "✓ 没有 INTERNET 权限"
+
+      - name: 上传 APK 产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: zuyong-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error

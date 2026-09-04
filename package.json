@@ -1,0 +1,23 @@
+{
+  "name": "zuyong",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "python3 -m http.server 8080",
+    "test": "node --test test/lib.test.mjs",
+    "test:shell": "node test/shell.smoke.mjs && node test/cleanup.smoke.mjs",
+    "check": "bash scripts/check-arch.sh && bash scripts/check-arch.test.sh",
+    "www": "node scripts/build-www.mjs",
+    "android": "node scripts/build-www.mjs && npx cap sync android",
+    "apk": "npm run android && cd android && ./gradlew assembleDebug"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.2.1",
+    "jsdom": "^26.0.0"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.2.1",
+    "@capacitor/core": "^6.2.1"
+  }
+}

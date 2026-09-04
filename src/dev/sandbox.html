@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>设备沙盘 · 足用</title>
+<style>
+  body { margin:0; padding:16px; background:#2b2b2b; color:#ddd;
+         font:14px/1.5 system-ui,sans-serif; }
+  .rack { display:flex; gap:16px; overflow-x:auto; align-items:flex-start; }
+  figure { margin:0; flex:none; }
+  figcaption { padding:6px 2px; font-size:12px; color:#999; }
+  iframe { border:1px solid #555; background:#fff; display:block; }
+  label { margin-inline-end:16px; }
+</style>
+</head>
+<body>
+<p>
+  <label><input type="checkbox" id="zoom"> 字体放大 130%</label>
+  <label><input type="checkbox" id="dark"> 深色模式</label>
+  <label>路由 <input id="route" value="#/" size="14"></label>
+</p>
+<div class="rack" id="rack"></div>
+<script>
+// 二十行代码换来的:所有尺寸并排,改一处 CSS 立刻看到六块屏一起变
+const sizes = [
+  [320, 568, 'iPhone SE · 最小'],
+  [360, 800, '安卓主流'],
+  [412, 915, '大屏安卓'],
+  [344, 882, '折叠屏合起'],
+  [674, 842, '折叠屏展开'],
+  [1024, 768, '平板横屏'],
+];
+const rack = document.getElementById('rack');
+function build() {
+  const zoom = document.getElementById('zoom').checked;
+  const dark = document.getElementById('dark').checked;
+  const route = document.getElementById('route').value;
+  rack.innerHTML = '';
+  for (const [w, h, name] of sizes) {
+    const f = document.createElement('iframe');
+    f.width = w; f.height = h;
+    f.src = '../../index.html' + route;
+    f.addEventListener('load', () => {
+      const d = f.contentDocument;
+      if (zoom) d.documentElement.style.fontSize = '130%';
+      if (dark) d.documentElement.style.colorScheme = 'dark';
+    });
+    const fig = document.createElement('figure');
+    fig.append(f, Object.assign(document.createElement('figcaption'), { textContent: `${name} · ${w}×${h}` }));
+    rack.append(fig);
+  }
+}
+document.querySelectorAll('input').forEach(i => i.addEventListener('change', build));
+document.getElementById('route').addEventListener('input', build);
+build();
+</script>
+</body>
+</html>

@@ -1,0 +1,67 @@
+/* 布局契约 · 变量层
+   工具里不许出现字面量颜色和字面量 px 间距,只用这里的 token。 */
+
+:root {
+  /* 纸与墨。米白沿用「记问」,让两个 app 摆在一起是一套 */
+  --paper:      #EFEDE4;
+  --paper-2:    #E6E3D8;   /* 凹陷区:输入框、代码块 */
+  --paper-3:    #DBD7C9;   /* 分隔线 */
+  --ink:        #1D1B16;
+  --ink-2:      #55503F;   /* 次级文字 */
+  --ink-3:      #8A8471;   /* 占位符、弱提示 */
+
+  /* 唯一强调色:铜绿。取自金文的载体而非字形本身 */
+  --accent:     #2F6350;
+  --accent-ink: #F4F2EA;
+  --focus:      #2F6350;
+  --warn:       #8A3B2A;
+
+  /* 字号。用 rem,跟随系统字体设置,所以容器一律不设死高度 */
+  --t-xs:   0.8125rem;
+  --t-sm:   0.875rem;
+  --t-base: 1rem;
+  --t-lg:   1.125rem;
+  --t-xl:   1.375rem;
+
+  --sans: system-ui, -apple-system, "PingFang SC", "Noto Sans CJK SC",
+          "Source Han Sans SC", "Microsoft YaHei", sans-serif;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas,
+          "Noto Sans Mono CJK SC", monospace;
+
+  /* 间距梯级 */
+  --s1: 4px;  --s2: 8px;  --s3: 12px;
+  --s4: 16px; --s5: 24px; --s6: 32px;
+
+  --radius: 10px;
+  --radius-sm: 6px;
+
+  /* 安全区。所有「贴边」的东西都从这两个变量取值,不直接写 env() */
+  --safe-top:    env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left:   env(safe-area-inset-left, 0px);
+  --safe-right:  env(safe-area-inset-right, 0px);
+
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper:      #16171A;
+    --paper-2:    #1F2125;
+    --paper-3:    #2E3137;
+    --ink:        #E8E5DC;
+    --ink-2:      #A8A497;
+    --ink-3:      #6E6B62;
+    --accent:     #6FAE93;
+    --accent-ink: #10221C;
+    --focus:      #6FAE93;
+    --warn:       #D98C78;
+  }
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: var(--t-base);
+}

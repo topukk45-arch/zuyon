@@ -1,0 +1,70 @@
+/* 布局契约 · 归零层
+   这一层的每条规则都对应《安卓 UI 适配》表里的一行症状。
+   工具页面渲染在它里面,因此拿不到写死尺寸的机会。 */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  /* 调大系统字体后容器撑爆 → 锁 textZoom 的 CSS 侧对应项 */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body, h1, h2, h3, h4, p, figure, blockquote, dl, dd, ul, ol {
+  margin: 0;
+  padding: 0;
+}
+
+ul[role='list'], ol[role='list'] { list-style: none; }
+
+body {
+  /* 100vh 算的是地址栏收起时的高度 → dvh,带 Chrome 108 以下回退 */
+  min-height: 100vh;
+  min-height: 100dvh;
+  text-rendering: optimizeSpeed;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  /* 键盘弹出时不让整页跟着橡皮筋 */
+  overscroll-behavior-y: none;
+}
+
+img, picture, svg, video, canvas {
+  max-width: 100%;
+  display: block;
+}
+
+input, button, textarea, select {
+  font: inherit;
+  color: inherit;
+}
+
+/* 每个文本节点都必须有溢出策略。这里给全局兜底,单行场景用 .u-ellipsis 覆盖 */
+p, li, h1, h2, h3, h4, label, button, td, th {
+  overflow-wrap: break-word;
+}
+
+button {
+  background: none;
+  border: none;
+  /* 点击目标不小于 44px */
+  min-height: 44px;
+  min-width: 44px;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+a { color: inherit; }
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
