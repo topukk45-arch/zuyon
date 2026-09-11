@@ -19,7 +19,7 @@ start(document.getElementById('app'));
 await new Promise(r => setTimeout(r, 50));
 const base = countPaste();
 
-for (const id of ['color-mixer', 'color-picker', 'color-mixer', 'contrast']) {
+for (const id of ['color-mixer', 'color-picker', 'charcard', 'color-mixer', 'contrast', 'charcard']) {
   location.hash = '/t/' + id;
   await new Promise(r => setTimeout(r, 120));
 }
@@ -27,6 +27,6 @@ location.hash = '/';
 await new Promise(r => setTimeout(r, 120));
 
 const leaked = countPaste() - base;
-console.log('反复进出四个工具后泄漏的 paste 监听:', leaked);
+console.log('反复进出各工具后泄漏的 paste 监听:', leaked);
 if (leaked !== 0) { console.log('FAIL —— 某个工具的清理函数没摘干净'); process.exit(1); }
 console.log('清理函数: ok');

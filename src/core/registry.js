@@ -43,6 +43,14 @@ const tools = [
     load: () => import('../tools/color-picker.js'),
   },
   {
+    id: 'charcard',
+    name: '角色卡',
+    desc: '读出 PNG 里藏的角色设定与世界书',
+    keywords: ['角色卡', '世界书', '酒馆', '类脑', '提示词', 'png', 'card', 'tavern', 'lorebook', 'chara'],
+    sniff: (s) => (/"(spec|first_mes|char_name|character_book)"\s*:/.test(s) ? 0.9 : 0),
+    load: () => import('../tools/charcard.js'),
+  },
+  {
     id: 'contrast',
     name: '对比度检查',
     desc: '前景背景色对比度与 WCAG 判定',

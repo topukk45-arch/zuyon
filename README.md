@@ -185,9 +185,9 @@ Capacitor 通过 WebViewAssetLoader 从 apk 内部读资源,走本地拦截,不�
       core/    registry.js platform.js storage.js shapes.js
       styles/  reset.css theme.css layout.css        ← 布局契约
       ui/      index.js  imagePicker.js   共用 DOM 组件(无业务、无平台)
-      lib/     time.js color.js 纯函数,无 DOM
+      lib/     time.js color.js charcard.js 纯函数,无 DOM
       tools/   color-mixer.js color-picker.js
-               timestamp.js contrast.js
+               timestamp.js contrast.js charcard.js
       dev/     sandbox.html     设备沙盘,六种尺寸并排
     test/      lib.test.mjs  shell.smoke.mjs  cleanup.smoke.mjs
     scripts/   check-arch.sh  check-arch.test.sh  build-www.mjs
@@ -207,6 +207,7 @@ Capacitor 通过 WebViewAssetLoader 从 apk 内部读资源,走本地拦截,不�
 | 调色台 | `mount` | Kubelka–Munk 颜料混合 + 光混合 + 算术平均三模型对比 |
 | 图片取色 | `mount` | 单击取色、整图主色、取色历史 |
 | 对比度检查 | `mount` | 样板。WCAG AA / AAA 判定 |
+| 角色卡 | `mount` | 读 PNG `tEXt` 块里的角色设定与世界书,解析在 `lib/charcard.js` |
 
 原来的 `color-mixer.html` 拆成了三个入口,共享 `lib/color.js`。
 拆的理由是首页搜索优先:人会搜「对比度」、搜「取色」,不会搜「调色台」;
