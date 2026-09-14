@@ -1,11 +1,12 @@
 {
   "name": "zuyong",
-  "version": "0.4.0",
+  "_comment_version": "这里不是版本号的出处。真版本在 src/core/version.js 和 android/app/build.gradle，两处由 check-arch.sh 第 8 条核对。这个字段固定 0.0.0，改了会被同一条规矩拦下 —— 版本号第三次落脚点就是第三次漂移。",
+  "version": "0.0.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "python3 -m http.server 8080",
-    "test": "node --test test/lib.test.mjs",
+    "test": "node --test test/*.test.mjs",
     "test:shell": "node test/shell.smoke.mjs && node test/cleanup.smoke.mjs && node test/back.smoke.mjs && node test/errors.smoke.mjs",
     "check": "bash scripts/check-arch.sh && bash scripts/check-arch.test.sh",
     "www": "node scripts/build-www.mjs",

@@ -10,8 +10,7 @@ const PRE = 'white-space:pre-wrap;word-break:break-word;font-family:var(--mono);
 
 export default {
   mount(root, ctx) {
-    const out = el('div', { class: 'tool-body' });
-    let current = null;
+    const out = el('div');
 
     const drop = fileDrop(
       ctx,
@@ -26,10 +25,8 @@ export default {
         const card = isPng(bytes)
           ? await readCard(bytes)
           : readCardFromText(new TextDecoder('utf-8').decode(bytes));
-        current = card;
         show(render(card, ctx));
       } catch (e) {
-        current = null;
         show(el('div', { class: 'result', 'data-error': 'true' }, e.message));
       }
     }
@@ -48,14 +45,13 @@ export default {
     // 首页粘一段卡片 JSON 直接进来
     if (ctx.initial) {
       try {
-        current = readCardFromText(ctx.initial);
-        show(render(current, ctx));
+        show(render(readCardFromText(ctx.initial), ctx));
       } catch (e) {
         show(el('div', { class: 'result', 'data-error': 'true' }, e.message));
       }
     }
 
-    return () => { current = null; };
+    return () => {};
   },
 };
 
@@ -78,8 +74,14 @@ function render(card, ctx) {
       JSON.stringify(card.raw, null, 2))]),
     el('div', { class: 'row' },
       button('复制全部 JSON', () => copy(ctx, JSON.stringify(card.raw, null, 2)), true),
-      button('存成 JSON 文件', () => save(ctx, card.raw, `${card.name || 'card'}.json`)),
-      card.book ? button('只存世界书', () => save(ctx, card.book, `${card.name || 'card'}-lorebook.json`)) : null,
+      // 存不了文件的环境(目前是安卓)干脆不显示,而不是点了没反应。
+      // 复制那条路在哪儿都通,导出的需求不至于落空。
+      ctx.platform.can('saveFile')
+        ? button('存成 JSON 文件', () => save(ctx, card.raw, `${card.name || 'card'}.json`))
+        : null,
+      ctx.platform.can('saveFile') && card.book
+        ? button('只存世界书', () => save(ctx, card.book, `${card.name || 'card'}-lorebook.json`))
+        : null,
     ),
   );
 }
@@ -102,7 +104,11 @@ function overview(card, w) {
     el('div', { style: `${MUTED};margin-top:var(--s3)` },
       `世界书 ${w.entries} 条　全卡粗估 ${w.total} tok`),
     el('div', { style: MUTED },
-      `每次请求的底噪 ${w.fixed + w.constant} tok(角色定义 ${w.fixed} + 常驻条目 ${w.constant})`),
+      `每次请求的底噪 ${w.resident + w.constant} tok(角色定义 ${w.resident} + 常驻条目 ${w.constant})`),
+    w.episodic
+      ? el('div', { style: MUTED },
+        `开场与示例 ${w.episodic} tok(会随聊天记录被裁掉,不计入底噪)`)
+      : null,
   );
 }
 
@@ -175,6 +181,6 @@ async function copy(ctx, text) {
 }
 
 async function save(ctx, obj, filename) {
-  await ctx.platform.saveFile(JSON.stringify(obj, null, 2), filename);
-  ctx.toast(`已保存 ${filename}`);
+  const ok = await ctx.platform.saveFile(JSON.stringify(obj, null, 2), filename);
+  ctx.toast(ok ? `已保存 ${filename}` : '保存失败,可以改用复制');
 }

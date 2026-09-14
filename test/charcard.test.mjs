@@ -33,6 +33,14 @@ function textChunk(keyword, value) {
   return chunk('tEXt', [...kw, 0, ...v]);
 }
 
+/* 裸 JSON 的卡里,中文是以 UTF-8 字节躺在块里的。
+ * 上面那个 textChunk 用 charCodeAt 逐字符写,超过 255 会被截断 ——
+ * 只适合写 base64 那种纯 ASCII 的值。中文走这个。 */
+function utf8TextChunk(keyword, value) {
+  const kw = [...keyword].map((c) => c.charCodeAt(0));
+  return chunk('tEXt', [...kw, 0, ...new TextEncoder().encode(value)]);
+}
+
 const b64 = (s) => Buffer.from(s, 'utf-8').toString('base64');
 
 const SAMPLE = {
@@ -154,5 +162,26 @@ test('常驻部分单独称重', () => {
   const w = weigh(normalizeCard(SAMPLE));
   assert.equal(w.entries, 2);
   assert.equal(w.constant, estimateTokens('苍蓝界。'), '只算常驻那条');
-  assert.ok(w.total > w.fixed);
+  assert.ok(w.total > w.resident);
+});
+
+test('开场白不算进底噪', () => {
+  const w = weigh(normalizeCard(SAMPLE));
+  assert.equal(w.resident, estimateTokens('南京。修行者。'), '底噪只有角色描述');
+  assert.equal(w.episodic, estimateTokens('你来了。'), '开场白单独列');
+  assert.ok(w.total >= w.resident + w.episodic + w.constant, 'total 仍是全卡');
+});
+
+/* 0.5 的回归:以前只在 iTXt 分支判「是不是 base64」,tEXt 一律当 base64 解,
+ * 于是裸 JSON 的卡会撞上「数据块可能在传输中被截断了」—— 数据是好的,
+ * 报错却把人引去重新找原图。判断改成按内容看,不按块类型看。 */
+test('tEXt 里的裸 JSON 不当成 base64', async () => {
+  const card = await readCard(png(utf8TextChunk('chara', JSON.stringify(SAMPLE))));
+  assert.equal(card.name, '殷紫萍');
+  assert.equal(card.spec, 'chara_card_v2');
+});
+
+test('裸 JSON 前面有换行也认得出来', async () => {
+  const card = await readCard(png(utf8TextChunk('chara', `\n  ${JSON.stringify(SAMPLE)}`)));
+  assert.equal(card.name, '殷紫萍');
 });

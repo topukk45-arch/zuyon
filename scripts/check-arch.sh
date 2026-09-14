@@ -53,6 +53,12 @@ if [ "$JS_VER" != "$GRADLE_VER" ]; then
 else
   echo "  版本 $JS_VER"
 fi
+PKG_VER=$(grep -oE '"version": *"[^"]+"' package.json | cut -d'"' -f4)
+if [ "$PKG_VER" != "0.0.0" ]; then
+  echo "  ✗ package.json 的 version 是 $PKG_VER，应当固定为 0.0.0"
+  echo "    它不是版本号的出处。曾经它停在 0.4.0 而真版本已经是 0.5 —— 钉死才不会再漂。"
+  fail=1
+fi
 
 echo "[9] 单文件超过 300 行就停下来想"
 for f in "${TOOLS[@]}"; do

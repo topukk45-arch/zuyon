@@ -23,9 +23,12 @@
 
 检查:
 
-    node --test "test/**/*.test.mjs"   # 纯函数逻辑
-    ./scripts/check-arch.sh            # 四条防腐规矩
-    ./scripts/check-arch.test.sh       # 确认上面那条真的会拦
+    npm test              # 纯函数逻辑(test/*.test.mjs 全量,现在 27 条)
+    npm run check         # 防腐规矩 + 反向自检,确认规矩真的会拦
+    npm run test:shell    # 外壳链路冒烟(jsdom)
+
+`npm test` 用通配,新建 `test/xxx.test.mjs` 自动进流水线 —— 不要写死文件名,
+0.5 就是因为写死了,角色卡那 13 条断言在 CI 里一次都没跑过。
 
 ---
 

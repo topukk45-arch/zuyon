@@ -128,24 +128,37 @@ export async function readCard(bytes) {
     throw new Error(`有文本块,但没有角色卡。图里的关键字是:${found}`);
   }
   const raw = hit.compressed ? await inflate(hit.body) : hit.body;
-  const text = hit.utf8 && !isProbablyB64(raw)
-    ? new TextDecoder('utf-8').decode(raw)
-    : b64ToUtf8(ascii(raw));
+  // 按内容判,不按块类型判。tEXt 规定只能装 Latin-1,所以标准做法是 base64,
+  // 但确实有工具往 tEXt 里直接塞 ASCII 的裸 JSON。以前这里只在 iTXt 分支判,
+  // 于是那种卡会撞上 b64ToUtf8 抛的「可能在传输中被截断了」——
+  // 数据明明是好的,却把人引去重新找原图。报错报错了方向比不报还费事。
+  const text = isProbablyB64(raw)
+    ? b64ToUtf8(ascii(raw))
+    : new TextDecoder('utf-8').decode(raw);
   const card = readCardFromText(text);
   card.keyword = hit.keyword;
   return card;
 }
 
-const isProbablyB64 = (bytes) => bytes.length > 0 && bytes[0] !== 0x7b; // 不是 '{'
+/* 跳过前导空白再看首字节:base64 字母表里没有 '{',所以「不以 { 开头」就当 base64。
+ * 空白要跳过,不然一个前导换行就能把裸 JSON 误判成 base64。 */
+const isProbablyB64 = (bytes) => {
+  const i = bytes.findIndex((b) => b !== 0x20 && b !== 0x09 && b !== 0x0a && b !== 0x0d);
+  return i >= 0 && bytes[i] !== 0x7b;
+};
 
+/* resident 标的是「每次请求都在上下文里」。
+ * 开场白是聊天记录里的一条消息,会随历史往上滚;对话示例在上下文吃紧时
+ * 酒馆是优先裁掉的。把这两样算进底噪会系统性高估,而底噪这个数的全部用处
+ * 就是提前判断「设定会不会挤掉聊天记录」——高估了,判断就反过来了。 */
 const FIELD_LABELS = [
-  ['description', '角色描述'],
-  ['personality', '性格摘要'],
-  ['scenario', '场景'],
-  ['first_mes', '开场白'],
-  ['mes_example', '对话示例'],
-  ['system_prompt', '系统提示词覆盖'],
-  ['post_history_instructions', '历史之后的指令'],
+  ['description', '角色描述', true],
+  ['personality', '性格摘要', true],
+  ['scenario', '场景', true],
+  ['first_mes', '开场白', false],
+  ['mes_example', '对话示例', false],
+  ['system_prompt', '系统提示词覆盖', true],
+  ['post_history_instructions', '历史之后的指令', true],
 ];
 
 /** V1 是平铺的,V2/V3 包了一层 data。归一成同一个形状。 */
@@ -164,7 +177,7 @@ export function normalizeCard(json) {
     notes: d.creator_notes ?? '',
     greetings: Array.isArray(d.alternate_greetings) ? d.alternate_greetings : [],
     fields: FIELD_LABELS
-      .map(([key, label]) => ({ key, label, text: String(d[key] ?? '') }))
+      .map(([key, label, resident]) => ({ key, label, resident, text: String(d[key] ?? '') }))
       .filter((f) => f.text.trim()),
     book: d.character_book ?? null,
     raw: json,
@@ -219,14 +232,20 @@ export function estimateTokens(text) {
   return Math.round(cjk + (s.length - cjk) / 3.5);
 }
 
-/** 整张卡的粗估用量,以及常驻部分单独算一份。 */
+/**
+ * 整张卡的粗估用量。resident + constant 才是「每次请求的底噪」,
+ * episodic(开场白、对话示例)单独列 —— 它们会被裁,不该混进底噪。
+ */
 export function weigh(card) {
-  const fixed = card.fields.map((f) => f.text).join('');
+  const join = (pred) => card.fields.filter(pred).map((f) => f.text).join('');
+  const resident = join((f) => f.resident);
+  const episodic = join((f) => !f.resident);
   const entries = (card.book?.entries ?? []).map(describeEntry);
   const constant = entries.filter((e) => e.constant && e.enabled).map((e) => e.content).join('');
   return {
-    total: estimateTokens(fixed + entries.map((e) => e.content).join('')),
-    fixed: estimateTokens(fixed),
+    total: estimateTokens(resident + episodic + entries.map((e) => e.content).join('')),
+    resident: estimateTokens(resident),
+    episodic: estimateTokens(episodic),
     constant: estimateTokens(constant),
     entries: entries.length,
   };

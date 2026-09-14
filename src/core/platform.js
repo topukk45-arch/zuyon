@@ -21,7 +21,17 @@ export function can(feature) {
     case 'share':         return runtime !== 'web' || !!navigator.share;
     case 'readClipboard': return !!navigator.clipboard?.readText;
     case 'pickFile':      return true;
-    case 'saveFile':      return true;
+    // ⚠ 这一行是「存文件」能力的唯一开关,改它就够了。
+    //
+    // saveFile 的实现是 <a download> + blob: URL,那是纯浏览器路子。
+    // Capacitor 的 WebView 默认没挂 DownloadListener,点下去多半没反应,
+    // 而调用方还会收到 true —— 提示说「已保存」,文件却不存在。
+    // 与其留一个假成功,不如在这里如实说自己不行,让按钮自己消失。
+    //
+    // 想让安卓真能存,唯一的路是 @capacitor/filesystem,那要加存储权限,
+    // 跟 AndroidManifest 里「装完权限是空的」直接冲突。那条是产品的根,
+    // 不为一个导出按钮去破。真机验过确实能存的话,把这行改回 true。
+    case 'saveFile':      return runtime === 'web';
     default:              return false;
   }
 }
@@ -65,13 +75,21 @@ export async function pickFile({ accept = '*/*' } = {}) {
     input.type = 'file';
     input.accept = accept;
     input.style.display = 'none';
-    input.addEventListener('change', () => {
-      resolve(input.files?.[0] ?? null);
+    let done = false;
+    const finish = (file) => {
+      if (done) return;
+      done = true;
+      resolve(file);
       input.remove();
-    }, { once: true });
-    // 用户取消时 change 不触发,靠窗口重新获得焦点收尾
+    };
+    input.addEventListener('change', () => finish(input.files?.[0] ?? null), { once: true });
+    // 用户取消时 change 不触发,靠窗口重新获得焦点收尾。
+    //
+    // 这个等待时间不能短。安卓上从相册选一张大图,系统要先把文件复制到应用
+    // 能读的地方,change 才会来;原来等 400ms,超时就判「取消了」并把 input 摘掉,
+    // 结果是用户明明选了图、却什么都没发生。宁可让真·取消多等一秒。
     window.addEventListener('focus', () => {
-      setTimeout(() => { if (input.isConnected) { resolve(null); input.remove(); } }, 400);
+      setTimeout(() => finish(null), 2000);
     }, { once: true });
     document.body.appendChild(input);
     input.click();
@@ -84,6 +102,7 @@ export async function pickFile({ accept = '*/*' } = {}) {
  * @param {string} filename
  */
 export async function saveFile(data, filename) {
+  if (!can('saveFile')) return false;   // 存不了就如实说,别让调用方报「已保存」
   const blob = data instanceof Blob ? data : new Blob([data], { type: 'text/plain' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
