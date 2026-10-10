@@ -218,3 +218,13 @@ Capacitor 通过 WebViewAssetLoader 从 apk 内部读资源,走本地拦截,不�
 
 图片取色区做成了 `ui/imagePicker.js`,调色台和图片取色共用同一份 ——
 这正是 `ui/` 这层存在的理由(`tools/` 之间不许互相 import)。
+
+## 许可证 / License
+
+© 2026 Yake（[topukk45-arch](https://github.com/topukk45-arch)）。
+
+本项目以 [PolyForm Noncommercial 1.0.0](LICENSE) 授权：可以自由学习、个人使用和修改，**禁止任何商业用途**。如需商用，请先联系作者。
+
+项目中引用的第三方字体、图标、库及其他素材，仍按其各自的许可证授权。
+
+This project is licensed under the [PolyForm Noncommercial License 1.0.0](LICENSE). Commercial use is not permitted.
