@@ -13,7 +13,9 @@ const CSS = `
 .go input,.go textarea{-webkit-user-select:text;user-select:text}
 .go .card{background:var(--paper-2);border-radius:var(--radius);padding:var(--s3);display:flex;flex-direction:column;gap:var(--s2)}
 .go .lbl{font-size:var(--t-xs);color:var(--ink-3)}
-.go .players{display:grid;grid-template-columns:1fr 1fr;gap:var(--s2)}
+.go .players{display:grid;grid-template-columns:1fr 1fr auto;gap:var(--s2);align-items:center}
+.go .newgame{min-width:40px;min-height:40px;padding:0;border-radius:50%;font-size:var(--t-lg);color:var(--ink-2)}
+.go .ask{border:1px solid var(--warn);border-radius:var(--radius);padding:var(--s2) var(--s3);display:flex;flex-wrap:wrap;gap:var(--s2);align-items:center} .go .ask span{flex:1;min-width:10em;font-size:var(--t-sm)}
 .go .pl{display:flex;align-items:center;gap:var(--s2);min-width:0;padding:var(--s1) var(--s2);border-radius:var(--radius-sm);border:1px solid transparent}
 .go .pl.on{border-color:var(--accent)}
 .go .pl input{flex:1;min-width:0;border:none;background:none;font-size:var(--t-sm);padding:var(--s1) 0}
@@ -106,6 +108,10 @@ export default {
     // ── 设置 ──
     const sizeSeg = el('div', { class: 'seg' }, SIZES.map((n) => el('button', { class: 'btn', 'data-n': n, onclick: () => changeSize(n) }, `${n} 路`)));
     const confirmRow = el('div', { class: 'row', hidden: true });
+    // 开局后才出现的「新对局」。放在双方名字那一行的最右边,不占棋盘和按钮的位置
+    const topAsk = el('div', { class: 'ask', hidden: true });
+    const newBtn = el('button', { class: 'btn newgame', title: '新对局', 'aria-label': '新对局',
+      onclick: () => ask(st.size, '清空当前棋局,重新开始?', topAsk) }, '↺');
     const check = (key, label) => {
       const box = el('input', { type: 'checkbox' }); box.checked = st[key];
       box.addEventListener('change', () => { st[key] = box.checked; render(); });
@@ -125,7 +131,8 @@ export default {
     const sgfIn = el('textarea', { class: 'textarea', placeholder: '粘贴 9、13、19 路的 SGF 棋谱', style: 'min-height:5em' });
 
     root.append(style, el('div', { class: 'tool-body go' },
-      el('div', { class: 'players' }, pB.node, pW.node),
+      el('div', { class: 'players' }, pB.node, pW.node, newBtn),
+      topAsk,
       board.node,
       el('div', { class: 'nav' }, bFirst, bPrev, bNext, bLast, bPass),
       slider,
@@ -181,16 +188,18 @@ export default {
     }
     function go(i) { st.cursor = Math.max(0, Math.min(st.moves.length, i)); pending = null; say(); render(); }
     function recompute() { series = winSeries(game(), opts()); recDirty = true; }
-    function ask(n, text) {
+    function ask(n, text, where = confirmRow) {
       if (!st.moves.length) { reset(n); return; }
-      askNew = n; clear(confirmRow);
-      confirmRow.append(el('span', { class: 'lbl' }, text), el('button', { class: 'btn btn--primary', onclick: () => reset(askNew) }, '确定'),
-        btn('取消', () => { confirmRow.hidden = true; }));
-      confirmRow.hidden = false;
+      askNew = n;
+      for (const box of [confirmRow, topAsk]) box.hidden = true;   // 同一时间只留一个确认框
+      clear(where);
+      where.append(el('span', { class: where === topAsk ? '' : 'lbl' }, text),
+        el('button', { class: 'btn btn--primary', onclick: () => reset(askNew) }, '确定'),
+        btn('取消', () => { where.hidden = true; })); where.hidden = false;
     }
     function changeSize(n) { if (n !== st.size) ask(n, `换成 ${n} 路会清空当前棋局`); }
     function reset(n) {
-      Object.assign(st, { size: n, moves: [], cursor: 0 }); confirmRow.hidden = true;
+      Object.assign(st, { size: n, moves: [], cursor: 0 }); confirmRow.hidden = topAsk.hidden = true;
       pending = null; say(); recompute(); render();
     }
     function importSgf() {
@@ -249,6 +258,7 @@ export default {
       turnLbl.textContent = ended ? '双方都停了一手,对局结束' : `轮到${turn === 1 ? '黑' : '白'}`;
       moveLbl.textContent = `第 ${st.cursor} 手 / 共 ${st.moves.length} 手`;
       slider.max = st.moves.length; slider.value = st.cursor;
+      newBtn.hidden = !st.moves.length;
       bFirst.disabled = bPrev.disabled = st.cursor === 0;
       bNext.disabled = bLast.disabled = st.cursor === st.moves.length;
 

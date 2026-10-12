@@ -95,3 +95,15 @@ const hadRecent = /最近使用/.test(t());
 document.querySelector('.panel__action')?.click();
 await new Promise(r => setTimeout(r, 30));
 console.log('清空最近  :', hadRecent && !/最近使用/.test(t()) && /全部工具/.test(t()) ? 'ok' : 'FAIL\n' + t());
+
+// 围棋:没开局时不显示「新对局」;开局后出现,点了先问,确定才清空
+location.hash = '/t/go';
+await new Promise(r => setTimeout(r, 150));
+const ng = () => document.querySelector('.go .newgame');
+const navBtns = () => [...document.querySelectorAll('.go .nav .btn')];
+for (const b of navBtns()) if (b.textContent === '停一手') b.click();
+const shown = !ng().hidden;
+ng().click();
+const asked = !document.querySelector('.go .ask').hidden && /共 [1-9]\d* 手/.test(t());
+[...document.querySelectorAll('.go .ask .btn')].find((b) => b.textContent === '确定').click();
+console.log('新对局按钮:', shown && asked && /共 0 手/.test(t()) && ng().hidden ? 'ok' : 'FAIL\n' + t());
