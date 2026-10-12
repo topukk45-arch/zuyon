@@ -58,6 +58,15 @@ const tools = [
     sniff: (s) => (/^#?[0-9a-f]{3}$|^#?[0-9a-f]{6}$/i.test(s.trim()) ? 0.8 : 0),
     load: () => import('../tools/contrast.js'),
   },
+  {
+    id: 'go',
+    name: '围棋摆棋',
+    desc: '9/13/19 路摆棋复盘,带形势估算与 SGF',
+    keywords: ['围棋', '摆棋', '复盘', '打谱', '棋谱', '下棋', '黑白棋子', 'go', 'weiqi', 'baduk', 'sgf'],
+    // SGF 棋谱:以 (; 开头,且有 SZ[ 或一手 B[xx]/W[xx]
+    sniff: (s) => (/^\s*\(\s*;/.test(s) && /SZ\[|[BW]\[[a-s]{0,2}\]/.test(s) ? 0.9 : 0),
+    load: () => import('../tools/go.js'),
+  },
 ];
 
 export default tools;

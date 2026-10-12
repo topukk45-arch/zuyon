@@ -65,3 +65,17 @@ await new Promise(r => setTimeout(r, 150));
 console.log('图片取色  :', /还没取色/.test(t()) && /取整图主色/.test(t()) ? 'ok' : 'FAIL');
 console.log('搜「取色」:', (await import('../src/shell/search.js')).search('取色').map(x=>x.id).join(',') === 'color-picker' ? 'ok' : 'FAIL');
 console.log('搜「配色」:', (await import('../src/shell/search.js')).search('配色').length === 2 ? 'ok' : 'FAIL');
+
+// ── 围棋摆棋:挂得上、能落子、SGF 粘贴能直达 ──
+location.hash = '/t/go';
+await new Promise(r => setTimeout(r, 150));
+console.log('围棋挂载  :', /走子记录/.test(t()) && /还没有落子|第 \d+ 手/.test(t()) && document.querySelector('.go canvas') ? 'ok' : 'FAIL\n'+t());
+console.log('搜「围棋」:', (await import('../src/shell/search.js')).search('围棋').map(x=>x.id).join(',') === 'go' ? 'ok' : 'FAIL');
+location.hash = '/';
+await new Promise(r => setTimeout(r, 80));
+const box2 = document.querySelector('.search input');
+box2.value = '(;GM[1]SZ[13];B[dd];W[jj])';
+box2.dispatchEvent(new dom.window.Event('input'));
+document.querySelector('.sniff')?.click();
+await new Promise(r => setTimeout(r, 150));
+console.log('SGF 直达  :', /共 2 手/.test(t()) && /K4/.test(t()) ? 'ok' : 'FAIL\n'+t());

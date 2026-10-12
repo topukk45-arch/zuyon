@@ -23,7 +23,7 @@
 
 检查:
 
-    npm test              # 纯函数逻辑(test/*.test.mjs 全量,现在 27 条)
+    npm test              # 纯函数逻辑(test/*.test.mjs 全量,现在 38 条)
     npm run check         # 防腐规矩 + 反向自检,确认规矩真的会拦
     npm run test:shell    # 外壳链路冒烟(jsdom)
 
