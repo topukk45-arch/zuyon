@@ -9,6 +9,8 @@ import {
 } from '../lib/go.js';
 
 const CSS = `
+.go{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.go input,.go textarea{-webkit-user-select:text;user-select:text}
 .go .card{background:var(--paper-2);border-radius:var(--radius);padding:var(--s3);display:flex;flex-direction:column;gap:var(--s2)}
 .go .lbl{font-size:var(--t-xs);color:var(--ink-3)}
 .go .players{display:grid;grid-template-columns:1fr 1fr;gap:var(--s2)}
