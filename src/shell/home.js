@@ -11,7 +11,7 @@ import { VERSION } from '../core/version.js';
 export function renderHome(scroll, ctx) {
   const box = el('input', {
     type: 'search',
-    placeholder: '搜工具,或直接粘贴内容',
+    placeholder: '搜索工具',
     autocomplete: 'off',
     autocorrect: 'off',
     spellcheck: 'false',
@@ -32,7 +32,7 @@ export function renderHome(scroll, ctx) {
       }, el('strong', {}, hit.tool.name), el('span', {}, `用「${hit.tool.name}」处理这段内容`)));
     }
 
-    if (!q.trim()) { results.append(recentAndAll(ctx)); return; }
+    if (!q.trim()) { results.append(recentAndAll(ctx, draw)); return; }
 
     const found = search(q);
     if (!found.length && !hit) {
@@ -56,7 +56,7 @@ export function renderHome(scroll, ctx) {
   );
 }
 
-function recentAndAll(ctx) {
+function recentAndAll(ctx, redraw) {
   const frag = document.createDocumentFragment();
   const recent = (shellStore.get('recent', []) ?? [])
     .map((id) => tools.find((t) => t.id === id))
@@ -65,7 +65,11 @@ function recentAndAll(ctx) {
   if (recent.length) {
     frag.append(
       el('section', { class: 'panel' },
-        el('div', { class: 'panel__head' }, el('h2', {}, '最近')),
+        el('div', { class: 'panel__head' }, el('h2', {}, '最近使用'),
+          el('button', {
+            class: 'panel__action',
+            onclick: () => { shellStore.set('recent', []); redraw(); ctx.toast('已清空'); },
+          }, '清空')),
         el('div', { class: 'chips', style: 'padding-bottom:var(--s2)' }, recent.map((t) =>
           el('button', { class: 'chip', onclick: () => openTool(t.id) }, t.name))),
       ),
@@ -77,8 +81,7 @@ function recentAndAll(ctx) {
       el('div', { class: 'panel__head' }, el('h2', {}, '全部工具'), el('span', {}, `共 ${tools.length} 个`)),
       list(tools),
     ),
-    // 不联网是产品的根,但不必在顶上挂个角标喊出来;页脚说一句就够
-    el('p', { class: 'home-foot' }, `足用 ${VERSION} · 纯本地,不联网`),
+    el('p', { class: 'home-foot' }, `足用 ${VERSION}`),
   );
   return frag;
 }

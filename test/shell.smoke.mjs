@@ -10,7 +10,7 @@ await new Promise(r => setTimeout(r, 50));
 
 const t = () => document.body.textContent;
 console.log('首页:', /工具箱/.test(t()) && /时间戳/.test(t()) && /对比度检查/.test(t()) ? 'ok' : 'FAIL\n'+t());
-console.log('页脚不联网:', /不联网/.test(t()) && !document.querySelector('.offline-badge') ? 'ok' : 'FAIL');
+console.log('无角标    :', !document.querySelector('.offline-badge') && document.querySelector('.search input').placeholder === '搜索工具' ? 'ok' : 'FAIL');
 
 // 搜索:输入「摩斯」应无果,输入「无障碍」应命中对比度检查
 const box = document.querySelector('.search input');
@@ -87,3 +87,11 @@ location.hash = '/t/go';
 await new Promise(r => setTimeout(r, 150));
 for (const b of document.querySelectorAll('.go .nav .btn')) b.click();
 console.log('不滚整页  :', pageScrolls === 0 ? 'ok' : 'FAIL —— 有 ' + pageScrolls + ' 次 scrollIntoView');
+
+// 最近使用:能清空,清完这张卡就不显示了
+location.hash = '/';
+await new Promise(r => setTimeout(r, 80));
+const hadRecent = /最近使用/.test(t());
+document.querySelector('.panel__action')?.click();
+await new Promise(r => setTimeout(r, 30));
+console.log('清空最近  :', hadRecent && !/最近使用/.test(t()) && /全部工具/.test(t()) ? 'ok' : 'FAIL\n' + t());

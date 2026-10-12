@@ -139,6 +139,16 @@
 }
 .panel__head h2 { font-size: var(--t-base); font-weight: 700; color: var(--ink); letter-spacing: .04em; }
 .panel__head span { font-size: var(--t-sm); color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.panel__head { align-items: center; }
+/* 卡片右上角的小操作,比如「清空」。字小,但点击区还是 44px */
+.panel__action {
+  font-size: var(--t-sm);
+  color: var(--ink-3);
+  padding-inline: var(--s2);
+  margin-inline-end: calc(var(--s2) * -1);
+  margin-block: calc(var(--s3) * -1);   /* 点击区留 44px,但不把标题行撑高 */
+}
+.panel__action:active { color: var(--accent); }
 
 /* 旧名字留着:工具里还在用 */
 .section-label {
