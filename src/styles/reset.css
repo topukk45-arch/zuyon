@@ -39,6 +39,10 @@ body, h1, h2, h3, h4, p, figure, blockquote, dl, dd, ul, ol {
 
 ul[role='list'], ol[role='list'] { list-style: none; }
 
+/* hidden 属性必须压过一切 display。浏览器给它的只是一条最弱的 display:none,
+   任何 .row{display:flex} 之类都能把它盖掉 —— 0.7.2 的确认框点了「取消」不消失就是这么来的 */
+[hidden] { display: none !important; }
+
 body {
   /* 100vh 算的是地址栏收起时的高度 → dvh,带 Chrome 108 以下回退 */
   min-height: 100vh;

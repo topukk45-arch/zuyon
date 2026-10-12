@@ -107,3 +107,10 @@ ng().click();
 const asked = !document.querySelector('.go .ask').hidden && /共 [1-9]\d* 手/.test(t());
 [...document.querySelectorAll('.go .ask .btn')].find((b) => b.textContent === '确定').click();
 console.log('新对局按钮:', shown && asked && /共 0 手/.test(t()) && ng().hidden ? 'ok' : 'FAIL\n' + t());
+
+// 取消要真的看不见:只设 hidden 属性不够,display:flex 会把它盖掉(0.7.2 的 bug)
+for (const b of navBtns()) if (b.textContent === '停一手') b.click();
+ng().click();
+[...document.querySelectorAll('.go .ask .btn')].find((b) => b.textContent === '取消').click();
+const askBox = document.querySelector('.go .ask');
+console.log('取消即消失:', askBox.hidden && dom.window.getComputedStyle(askBox).display === 'none' && /共 [1-9]\d* 手/.test(t()) ? 'ok' : 'FAIL —— display=' + dom.window.getComputedStyle(askBox).display);

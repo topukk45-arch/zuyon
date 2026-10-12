@@ -15,7 +15,7 @@ const CSS = `
 .go .lbl{font-size:var(--t-xs);color:var(--ink-3)}
 .go .players{display:grid;grid-template-columns:1fr 1fr auto;gap:var(--s2);align-items:center}
 .go .newgame{min-width:40px;min-height:40px;padding:0;border-radius:50%;font-size:var(--t-lg);color:var(--ink-2)}
-.go .ask{border:1px solid var(--warn);border-radius:var(--radius);padding:var(--s2) var(--s3);display:flex;flex-wrap:wrap;gap:var(--s2);align-items:center} .go .ask span{flex:1;min-width:10em;font-size:var(--t-sm)}
+.go .ask{border:1px solid var(--warn);border-radius:var(--radius);padding:var(--s2) var(--s3)} .go .ask:not([hidden]){display:flex;flex-wrap:wrap;gap:var(--s2);align-items:center} .go .ask span{flex:1;min-width:10em;font-size:var(--t-sm)}
 .go .pl{display:flex;align-items:center;gap:var(--s2);min-width:0;padding:var(--s1) var(--s2);border-radius:var(--radius-sm);border:1px solid transparent}
 .go .pl.on{border-color:var(--accent)}
 .go .pl input{flex:1;min-width:0;border:none;background:none;font-size:var(--t-sm);padding:var(--s1) 0}
