@@ -10,8 +10,7 @@ import { renderTool } from './toolhost.js';
 export function start(root) {
   const title = el('h1', { class: 'bar__title u-ellipsis' }, '工具箱');
   const back = el('button', { class: 'bar__back', onclick: home, 'aria-label': '返回' }, '‹');
-  const badge = el('span', { class: 'offline-badge' }, '无网络权限');
-  const bar = el('header', { class: 'bar' }, back, title, badge);
+  const bar = el('header', { class: 'bar' }, back, title);
   const scroll = el('main', { class: 'scroll' });
 
   root.append(bar, scroll);
@@ -28,13 +27,11 @@ export function start(root) {
 
     const route = parse();
     if (route.name === 'home') {
-      back.style.display = 'none';
-      badge.style.display = '';
+      root.classList.add('is-home');
       title.textContent = '工具箱';
       renderHome(scroll, ctx);
     } else {
-      back.style.display = '';
-      badge.style.display = 'none';
+      root.classList.remove('is-home');
       title.textContent = byId(route.id)?.name ?? '工具';
       cleanup = await renderTool(scroll, route.id, takePayload(), ctx);
     }

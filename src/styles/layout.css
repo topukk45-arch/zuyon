@@ -22,7 +22,7 @@
   padding: var(--s3) var(--s4);
   padding-top: calc(var(--s3) + var(--safe-top));
   border-bottom: 1px solid var(--paper-3);
-  background: var(--paper);
+  background: var(--surface);
   position: sticky;
   top: 0;
   z-index: 10;
@@ -30,7 +30,8 @@
 
 .bar__title {
   font-size: var(--t-lg);
-  font-weight: 600;
+  font-weight: 700;
+  color: var(--accent-2);
   flex: 1;
   min-width: 0;
 }
@@ -44,15 +45,9 @@
   color: var(--ink-2);
 }
 
-/* 「无网络权限」角标。放首页顶栏,不藏进关于页 */
-.offline-badge {
-  font-size: var(--t-xs);
-  color: var(--accent);
-  border: 1px solid currentColor;
-  border-radius: 999px;
-  padding: 2px var(--s2);
-  white-space: nowrap;
-}
+/* 首页不要顶栏:标题住进头卡里,顶栏那一条安全区交给滚动区 */
+#app.is-home .bar { display: none; }
+#app.is-home .scroll { padding-top: calc(var(--s4) + var(--safe-top)); }
 
 /* ── 可滚动主体 ──────────────────────── */
 .scroll {
@@ -67,32 +62,48 @@
   gap: var(--s4);
 }
 
-/* ── 搜索 ───────────────────────────── */
-.search {
+/* ── 首页头卡 ─────────────────────────
+   照「记问」的容器卡:浅渐变 + 一圈主色描边 + 柔和阴影 */
+.home-head {
+  background: linear-gradient(135deg, var(--card-1), var(--card-2));
+  border: 1px solid var(--line-mid);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  padding: var(--s4);
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  gap: var(--s3);
+}
+.home-head__title {
+  display: flex;
+  align-items: baseline;
   gap: var(--s2);
-  background: var(--paper-2);
-  border: 1px solid transparent;
-  border-radius: var(--radius);
-  padding-inline: var(--s3);
+  padding-bottom: var(--s3);
+  border-bottom: 1px solid var(--paper-3);
 }
-.search:focus-within { border-color: var(--accent); }
+.home-head__title h1 { font-size: var(--t-xl); font-weight: 700; color: var(--accent-2); letter-spacing: .04em; }
+.home-head__title span { font-size: var(--t-sm); color: var(--ink-2); }
 
+/* ── 搜索 ─────────────────────────────
+   不放放大镜图标:输入框本身就是搜索,占位符已经说清楚 */
 .search input {
-  flex: 1;
-  min-width: 0;
-  border: none;
-  background: none;
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--paper-3);
+  border-radius: var(--radius);
+  padding: var(--s3) var(--s4);
+  min-height: 46px;
   outline: none;
-  padding-block: var(--s3);
-  min-height: 44px;
+  transition: border-color .15s, box-shadow .15s;
 }
+.search input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--paper-2); }
 .search input::placeholder { color: var(--ink-3); }
+.search input::-webkit-search-cancel-button { display: none; }
 
 /* 粘贴内容后的直达建议 */
 .sniff {
   border: 1px solid var(--accent);
+  background: var(--surface);
   border-radius: var(--radius);
   padding: var(--s3) var(--s4);
   display: flex;
@@ -113,7 +124,23 @@
   flex: 1;
 }
 
-/* ── 工具清单 ───────────────────────── */
+/* ── 分区卡片:最近、全部工具 ─────────── */
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--paper-3);
+  border-radius: 14px;
+  padding: var(--s3) var(--s4);
+}
+.panel__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding-block: var(--s1) var(--s3);
+}
+.panel__head h2 { font-size: var(--t-base); font-weight: 700; color: var(--ink); letter-spacing: .04em; }
+.panel__head span { font-size: var(--t-sm); color: var(--ink-3); font-variant-numeric: tabular-nums; }
+
+/* 旧名字留着:工具里还在用 */
 .section-label {
   font-size: var(--t-sm);
   color: var(--ink-3);
@@ -126,20 +153,21 @@
   flex-direction: column;
 }
 
+/* 列表行照「记问」分类汇总:虚线分隔,右侧一个小箭头 */
 .tool-item {
   display: flex;
   align-items: center;
   gap: var(--s3);
   width: 100%;
   text-align: start;
-  padding: var(--s3) var(--s2);
-  border-radius: var(--radius-sm);
-  border-bottom: 1px solid var(--paper-3);
+  padding: var(--s3) 0;
+  border-bottom: 1px dashed var(--paper-3);
 }
-.tool-item:last-child { border-bottom: none; }
+.tool-list li:last-child .tool-item { border-bottom: none; }
 .tool-item:active { background: var(--paper-2); }
+.tool-item::after { content: '›'; color: var(--ink-3); font-size: var(--t-lg); }
 
-.tool-item__name { font-size: var(--t-base); }
+.tool-item__name { font-size: var(--t-base); color: var(--ink); }
 .tool-item__desc {
   font-size: var(--t-sm);
   color: var(--ink-3);
@@ -151,19 +179,23 @@
 
 .chips { display: flex; flex-wrap: wrap; gap: var(--s2); }
 .chip {
+  background: var(--paper);
   border: 1px solid var(--paper-3);
   border-radius: 999px;
-  padding: var(--s2) var(--s4);
+  padding: var(--s1) var(--s4);
   font-size: var(--t-sm);
-  min-height: 40px;
+  color: var(--accent-2);
+  min-height: 36px;
 }
-.chip:active { background: var(--paper-2); }
+.chip:active { background: var(--paper-2); border-color: var(--line-mid); }
 
 .empty {
   color: var(--ink-3);
   font-size: var(--t-sm);
   padding: var(--s5) 0;
 }
+
+.home-foot { text-align: center; font-size: var(--t-xs); color: var(--ink-3); padding-top: var(--s2); }
 
 /* ── 工具容器与通用组件 ──────────────── */
 .tool-body {
@@ -206,14 +238,16 @@
 .row { display: flex; gap: var(--s2); flex-wrap: wrap; }
 
 .btn {
+  background: var(--surface);
   border: 1px solid var(--paper-3);
   border-radius: var(--radius-sm);
   padding: var(--s2) var(--s4);
   font-size: var(--t-sm);
+  color: var(--ink);
 }
-.btn:active { background: var(--paper-2); }
+.btn:active { background: var(--paper-2); transform: scale(.97); }
 .btn--primary {
-  background: var(--accent);
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
   color: var(--accent-ink);
   border-color: var(--accent);
 }

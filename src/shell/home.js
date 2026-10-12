@@ -17,7 +17,7 @@ export function renderHome(scroll, ctx) {
     spellcheck: 'false',
   });
 
-  const results = el('div');
+  const results = el('div', { style: 'display:flex;flex-direction:column;gap:var(--s4)' });
 
   const draw = () => {
     clear(results);
@@ -39,14 +39,19 @@ export function renderHome(scroll, ctx) {
       results.append(el('p', { class: 'empty' }, `没有能处理「${q}」的工具。`));
       return;
     }
-    results.append(list(found));
+    results.append(el('section', { class: 'panel' },
+      el('div', { class: 'panel__head' }, el('h2', {}, '搜索结果'), el('span', {}, `${found.length} 个`)),
+      list(found)));
   };
 
   box.addEventListener('input', draw);
   draw();
 
   scroll.append(
-    el('div', { class: 'search' }, el('span', { 'aria-hidden': 'true' }, '🔍'), box),
+    el('section', { class: 'home-head' },
+      el('div', { class: 'home-head__title' }, el('h1', {}, '足用'), el('span', {}, `工具箱 · ${tools.length} 个工具`)),
+      el('div', { class: 'search' }, box),
+    ),
     results,
   );
 }
@@ -59,21 +64,21 @@ function recentAndAll(ctx) {
 
   if (recent.length) {
     frag.append(
-      el('div', {},
-        el('p', { class: 'section-label' }, '最近'),
-        el('div', { class: 'chips' }, recent.map((t) =>
+      el('section', { class: 'panel' },
+        el('div', { class: 'panel__head' }, el('h2', {}, '最近')),
+        el('div', { class: 'chips', style: 'padding-bottom:var(--s2)' }, recent.map((t) =>
           el('button', { class: 'chip', onclick: () => openTool(t.id) }, t.name))),
       ),
     );
   }
 
   frag.append(
-    el('div', {},
-      el('p', { class: 'section-label' }, `全部工具 · ${tools.length}`),
+    el('section', { class: 'panel' },
+      el('div', { class: 'panel__head' }, el('h2', {}, '全部工具'), el('span', {}, `共 ${tools.length} 个`)),
       list(tools),
     ),
-    el('p', { class: 'section-label', style: 'text-align:center;margin-top:var(--s5)' },
-      `足用 ${VERSION}`),
+    // 不联网是产品的根,但不必在顶上挂个角标喊出来;页脚说一句就够
+    el('p', { class: 'home-foot' }, `足用 ${VERSION} · 纯本地,不联网`),
   );
   return frag;
 }
