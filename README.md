@@ -4,6 +4,14 @@
 
 纯本地工具箱。不卡顿、便捷、不联网。
 
+## 下载
+
+手机浏览器打开,直接下 apk,不用登录、不用解压:
+
+**https://github.com/topukk45-arch/zuyon/releases/download/latest-build/zuyong-latest.apk**
+
+这个地址永远指向最新一次打包。签名不变,装上去直接覆盖升级。
+
 ## 跑起来
 
 在项目根目录(有 `index.html` 那一层)开一个终端:
@@ -114,7 +122,7 @@ export default {
 ### 用 GitHub Actions(推荐)
 
 每次 push 自动出包,也可以在 Actions 页面手动 Run workflow。
-产物在 Artifacts 里的 `zuyong-apk`。
+产物在 Artifacts 里的 `zuyong-apk`;main 分支打包成功后,同一个 apk 还会放进「最新测试版」发行页(见上面「下载」)。
 
 **首次要先配四个 Secret**(Settings → Secrets and variables → Actions):
 
