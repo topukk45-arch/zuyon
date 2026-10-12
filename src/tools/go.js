@@ -58,7 +58,7 @@ export default {
     const game = () => ({ size: st.size, moves: st.moves });
     const opts = () => ({ rule: st.rule, komi: st.komi });
     const save = () => ctx.storage.set('state', st);
-    let series = [], pending = null, askNew = null;
+    let series = [], pending = null, askNew = null, recDirty = true;
 
     const style = el('style', {}, CSS);
     const board = boardView(onPoint);
@@ -93,7 +93,11 @@ export default {
     const note = el('textarea', { class: 'textarea', rows: '2', placeholder: '记下这手的想法', style: 'min-height:3.5em;font-family:var(--sans)' });
     note.addEventListener('input', () => {
       const m = st.moves[st.cursor - 1];
-      if (m) { if (note.value.trim()) m.note = note.value; else delete m.note; save(); renderRecord(); }
+      if (!m) return;
+      if (note.value.trim()) m.note = note.value; else delete m.note;
+      save();
+      const i = st.cursor - 1, old = rec.children[i];   // 只换这一条,打字时不重建整张记录
+      if (old) { const nu = recItem(m, i, replay(game(), st.cursor).capList[i]); nu.className = old.className; old.replaceWith(nu); }
     });
     const noteLbl = el('span', { class: 'lbl' }), rec = el('div', { class: 'rec' });
     const copyBtn = (label, get) => el('button', { class: 'btn', onclick: async () => ctx.toast(await ctx.platform.copy(get()) ? '已复制' : '复制失败') }, label);
@@ -162,11 +166,21 @@ export default {
       if (st.sound) clack();
     }
     function commit(m) {
+      const append = st.cursor === st.moves.length && rec.querySelectorAll('button').length === st.moves.length;
       st.moves = st.moves.slice(0, st.cursor); st.moves.push(m); st.cursor++;
-      pending = null; recompute(); render();
+      // 走势只补算新的这一手,不从头重算 —— 几百手时每一手都全算一遍会越下越卡
+      series = series.slice(0, st.cursor);
+      const r = replay(game());
+      series.push(winProb(score(estimate(r.board), r.caps, opts()), countStones(r.board), st.size));
+      // 在末尾接着下,记录只追加一条;从中间改下才整个重建
+      if (append && !recDirty) {
+        if (st.moves.length === 1) clear(rec);
+        rec.append(recItem(m, st.moves.length - 1, r.capList[st.moves.length - 1]));
+      } else recDirty = true;
+      pending = null; render();
     }
     function go(i) { st.cursor = Math.max(0, Math.min(st.moves.length, i)); pending = null; say(); render(); }
-    function recompute() { series = winSeries(game(), opts()); }
+    function recompute() { series = winSeries(game(), opts()); recDirty = true; }
     function ask(n, text) {
       if (!st.moves.length) { reset(n); return; }
       askNew = n; clear(confirmRow);
@@ -193,17 +207,31 @@ export default {
       } catch (e) { ctx.toast('导入失败:' + e.message); }
     }
 
-    function renderRecord() {
-      const { capList } = replay(game());
-      clear(rec);
-      st.moves.forEach((m, i) => rec.append(el('button', {
-        class: (i === st.cursor - 1 ? 'cur' : '') + (i >= st.cursor ? ' after' : ''),
-        title: m.note ?? '', onclick: () => go(i + 1),
-      }, el('span', { style: 'opacity:.6;min-width:1.8em;text-align:end' }, i + 1),
+    function recItem(m, i, cap) {
+      return el('button', { title: m.note ?? '', onclick: () => go(i + 1) },
+        el('span', { style: 'opacity:.6;min-width:1.8em;text-align:end' }, i + 1),
         dot(m.c, '9px'),
-        coordName(m, st.size), capList[i] ? el('em', {}, `提${capList[i]}`) : null, m.note ? el('em', {}, '注') : null)));
-      if (!st.moves.length) rec.append(el('span', { class: 'lbl' }, '还没有落子'));
-      rec.querySelector('.cur')?.scrollIntoView?.({ block: 'nearest' });
+        coordName(m, st.size), cap ? el('em', {}, `提${cap}`) : null, m.note ? el('em', {}, '注') : null);
+    }
+    // 棋谱变了才重建;只是前进后退,就改高亮。19 路几百手,每步都重建在手机上会卡
+    function renderRecord() {
+      if (recDirty) {
+        recDirty = false;
+        const { capList } = replay(game());
+        clear(rec);
+        st.moves.forEach((m, i) => rec.append(recItem(m, i, capList[i])));
+        if (!st.moves.length) rec.append(el('span', { class: 'lbl' }, '还没有落子'));
+      }
+      [...rec.children].forEach((b, i) => {
+        b.classList.toggle('cur', i === st.cursor - 1);
+        b.classList.toggle('after', i >= st.cursor && i < st.moves.length);
+      });
+      // 只滚记录框自己。scrollIntoView 会连整页一起滚,棋盘被推出屏幕,下一次点击就落空了
+      const cur = rec.querySelector('.cur');
+      if (cur) {
+        const top = cur.offsetTop - rec.offsetTop;
+        if (top < rec.scrollTop || top > rec.scrollTop + rec.clientHeight - cur.offsetHeight) rec.scrollTop = top - rec.clientHeight / 2;
+      }
     }
 
     function render() {

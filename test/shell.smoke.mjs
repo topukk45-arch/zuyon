@@ -79,3 +79,11 @@ box2.dispatchEvent(new dom.window.Event('input'));
 document.querySelector('.sniff')?.click();
 await new Promise(r => setTimeout(r, 150));
 console.log('SGF 直达  :', /共 2 手/.test(t()) && /K4/.test(t()) ? 'ok' : 'FAIL\n'+t());
+
+// 围棋:前进后退不许滚动整页(0.6 用了 scrollIntoView,把棋盘推出屏幕,下一次点击就落空)
+let pageScrolls = 0;
+dom.window.Element.prototype.scrollIntoView = () => { pageScrolls++; };
+location.hash = '/t/go';
+await new Promise(r => setTimeout(r, 150));
+for (const b of document.querySelectorAll('.go .nav .btn')) b.click();
+console.log('不滚整页  :', pageScrolls === 0 ? 'ok' : 'FAIL —— 有 ' + pageScrolls + ' 次 scrollIntoView');
