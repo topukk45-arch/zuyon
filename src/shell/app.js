@@ -19,7 +19,13 @@ export function start(root) {
 
   const ctx = { toast };
 
+  // 工具模块要等加载,等的时候路由可能已经又变了(点进去马上返回、连点两下)。
+  // 每次渲染领一个号,加载完发现号不是最新的就什么都不碰 —— 否则旧工具会盖掉
+  // 新页面,或者同一个工具挂两遍、前一遍的清理函数丢失(定时器、监听、后台线程漏掉)。
+  let seq = 0, inflight = null;
+
   async function render() {
+    const my = ++seq;
     try { cleanup(); } catch { /* 工具的清理函数炸了不该拖垮外壳 */ }
     cleanup = () => {};
     clear(scroll);
@@ -27,13 +33,19 @@ export function start(root) {
 
     const route = parse();
     if (route.name === 'home') {
+      inflight = null;
       root.classList.add('is-home');
       title.textContent = '工具箱';
       renderHome(scroll, ctx);
     } else {
       root.classList.remove('is-home');
       title.textContent = byId(route.id)?.name ?? '工具';
-      cleanup = await renderTool(scroll, route.id, takePayload(), ctx);
+      // 连点同一个工具时,带进来的内容被第一次渲染取走了,这次接着用
+      let payload = takePayload();
+      if (!payload && inflight?.id === route.id) payload = inflight.payload;
+      inflight = { id: route.id, payload };
+      const c = await renderTool(scroll, route.id, payload, ctx, () => my === seq);
+      if (my === seq) { cleanup = c; inflight = null; }
     }
   }
 

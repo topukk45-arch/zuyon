@@ -38,21 +38,29 @@ export function can(feature) {
 
 /** 复制文本到剪贴板。 */
 export async function copy(text) {
+  // writeText 会被拒(页面没焦点、没权限)。拒了要接住再走老办法,
+  // 不能往外抛 —— 调用方只看真假,抛出去就成了全局兜底那块红色报错面板。
   if (navigator.clipboard?.writeText) {
-    await navigator.clipboard.writeText(text);
-    return true;
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch { /* 落到下面的兜底 */ }
   }
   // 老 WebView 兜底
   const ta = document.createElement('textarea');
-  ta.value = text;
-  ta.setAttribute('readonly', '');
-  ta.style.position = 'fixed';
-  ta.style.opacity = '0';
-  document.body.appendChild(ta);
-  ta.select();
-  const ok = document.execCommand?.('copy') ?? false;
-  ta.remove();
-  return ok;
+  try {
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    return document.execCommand?.('copy') ?? false;
+  } catch {
+    return false;
+  } finally {
+    ta.remove();
+  }
 }
 
 /** 读剪贴板。首页的「粘贴内容直达」靠它。可能被权限拒绝,调用方必须容错。 */

@@ -211,7 +211,7 @@ export default {
         if (r.white) st.white = pW.node.querySelector('input').value = r.white;
         if (r.komi !== null) komiIn.value = st.komi = r.komi;
         if (r.rule) ruleSel.value = st.rule = r.rule;
-        recompute(); render();
+        pending = null; recompute(); render();   // 待确认的那一点属于旧棋盘,换了大小还画它会越界
         ctx.toast(valid < r.game.moves.length ? `导入前 ${valid} 手,第 ${valid + 1} 手不合规则` : `导入了 ${valid} 手`);
       } catch (e) { ctx.toast('导入失败:' + e.message); }
     }

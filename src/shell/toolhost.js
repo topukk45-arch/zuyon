@@ -9,7 +9,8 @@ import { el } from '../ui/index.js';
 import { home } from './router.js';
 import { errorPanel } from './errors.js';
 
-export async function renderTool(scroll, id, payload, ctx) {
+/** alive():加载完时这次渲染还算不算数。路由已经变了就返回 false,这里一个节点都不碰。 */
+export async function renderTool(scroll, id, payload, ctx, alive = () => true) {
   const meta = byId(id);
   if (!meta) {
     scroll.append(el('p', { class: 'empty' }, '没有这个工具。'));
@@ -22,11 +23,13 @@ export async function renderTool(scroll, id, payload, ctx) {
     mod = (await meta.load()).default;
     if (!mod) throw new Error('模块加载了，但没有 default 导出');
   } catch (e) {
+    if (!alive()) return () => {};
     // 把原因显示出来。手机上没有控制台，吞掉错误等于让人对着空白页猜。
     scroll.textContent = '';
     scroll.append(errorPanel(`工具「${meta.name}」没加载出来`, e));
     return () => {};
   }
+  if (!alive()) return () => {};
   scroll.textContent = '';
 
   // 工具能拿到的东西被限死在这个对象里

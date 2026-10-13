@@ -177,7 +177,12 @@ export default {
       }
     }
 
+    // 生成的命令是按「当时那个服、那个时区」算的绝对时刻。服或时区一变
+    // (切换、改时区、添加、删除、恢复默认),旧结果的钟点就对不上标题了,复制出去就拨错。
+    let shownFor = '';
     function render() {
+      const key = `${cur()?.id}|${cur()?.zone}`;
+      if (key !== shownFor) { shownFor = key; results = []; }
       renderServers(); renderStatus(); renderResults();
       const s = cur(), n = now();
       at.value = local(s.zone, n); evStart.value = evEnd.value = '';

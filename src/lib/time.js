@@ -24,6 +24,14 @@ export function formatUTC(date) {
 /** 宽松解析日期文本 → Date */
 export function parseDateText(text) {
   const s = String(text).trim().replace(/\//g, '-');
+  // 只写日期时自己按本地 0 点拼。交给 new Date 的话,'2026-10-15' 这种纯日期
+  // 按规范当 UTC 解析,在北京就成了早上 8 点;带时分的又当本地时间,两种写法差 8 小时。
+  const m = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(s);
+  if (m) {
+    const d = new Date(+m[1], +m[2] - 1, +m[3]);
+    if (d.getMonth() !== +m[2] - 1 || d.getDate() !== +m[3]) throw new Error('看不懂这个日期');
+    return d;
+  }
   const d = new Date(s.includes('T') ? s : s.replace(' ', 'T'));
   if (Number.isNaN(d.getTime())) throw new Error('看不懂这个日期');
   return d;

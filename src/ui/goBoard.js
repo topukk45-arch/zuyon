@@ -95,7 +95,7 @@ export function boardView(onPoint) {
       g.beginPath(); g.arc(P(last[0]), P(last[1]), showNums ? r + 2 : r * 0.36, 0, 7); g.stroke();
     }
     const gh = hover ?? ghost;
-    if (gh && !board[gh.y][gh.x]) {
+    if (gh && gh.x < n && gh.y < n && !board[gh.y][gh.x]) {   // 虚影可能来自换大小之前
       g.globalAlpha = 0.5; g.fillStyle = gh.c === 1 ? BLACK : WHITE;
       g.beginPath(); g.arc(P(gh.x), P(gh.y), r, 0, 7); g.fill(); g.globalAlpha = 1;
     }
