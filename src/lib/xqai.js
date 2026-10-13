@@ -49,21 +49,46 @@ export const LEVELS = {
   hard: { name: '高手', depth: 30, ms: 2500, noise: 0 },
 };
 
+/** 重复局面里长将的一方判负。比任何子力差都大,但比绝杀小,不会被当成杀棋提前收手。 */
+const REP_LOSS = 20000;
+
+const hashOf = (b, side) => {
+  let h1 = 0, h2 = 0;
+  for (let s = 0; s < 90; s++) if (b[s]) { h1 ^= Z1[b[s]][s]; h2 ^= Z2[b[s]][s]; }
+  return side === RED ? [h1, h2] : [h1 ^ ZS1, h2 ^ ZS2];
+};
+const countPieces = (b) => { let n = 0; for (let s = 0; s < 90; s++) if (b[s]) n++; return n; };
+
 /**
  * 给局面找一步。board 是 Int8Array(90) 或普通数组,side 是该谁走。
- * history:之前出现过的局面指纹,遇到就当和棋(防止电脑自己绕圈)。这里只用本次搜索路径。
+ * history:当前局面之前的对局局面,从早到晚,每项 { board, side, check }
+ *   (check:轮到 side 走时是不是被将着,也就是上一手是不是将军)。
+ *   推演走回这些局面、或走回本次推演里出现过的局面,都按裁判同一条规矩判:
+ *   这一圈里一方步步将军、另一方不是,将军的一方输;否则和棋(见 xiangqi.js 的 judgeRepeat)。
+ *   不传就只认本次推演里的重复。
  * @returns {{ move:number, score:number, depth:number, nodes:number }}  move 为 0 表示无棋可走
  */
-export function think({ board, side, level = 'mid', now = () => Date.now(), random = Math.random }) {
+export function think({ board, side, level = 'mid', history = [], now = () => Date.now(), random = Math.random }) {
   const L = LEVELS[level] ?? LEVELS.mid;
   const b = Int8Array.from(board);
   let h1 = 0, h2 = 0, score = 0;
   for (let s = 0; s < 90; s++) if (b[s]) { h1 ^= Z1[b[s]][s]; h2 ^= Z2[b[s]][s]; score += pv(b[s], s); }
   if (side !== RED) { h1 ^= ZS1; h2 ^= ZS2; }
 
+  // 整条线:对局历史 + 当前局面 + 推演路径。第 i 项是一个局面的指纹、子数、轮到的一方是不是被将着。
+  // 吃过子的局面回不去,所以历史只留子数和现在一样的那一截。
+  let pieces = countPieces(b);
+  const LH1 = [], LH2 = [], LP = [], LC = [];
+  let from = history.length;
+  while (from > 0 && countPieces(history[from - 1].board) === pieces) from--;
+  for (let i = from; i < history.length; i++) {
+    const [a1, a2] = hashOf(history[i].board, history[i].side);
+    LH1.push(a1); LH2.push(a2); LP.push(pieces); LC.push(!!history[i].check);
+  }
+
   const tKey = new Int32Array(TT_SIZE), tMove = new Int32Array(TT_SIZE), tScore = new Int16Array(TT_SIZE);
   const tDepth = new Int8Array(TT_SIZE).fill(-1), tFlag = new Int8Array(TT_SIZE);
-  const killers = [], hist = new Int32Array(1 << 14), path = [];
+  const killers = [], hist = new Int32Array(1 << 14);
   const deadline = now() + L.ms;
   let nodes = 0, stop = false, stm = side;
 
@@ -71,7 +96,7 @@ export function think({ board, side, level = 'mid', now = () => Date.now(), rand
     const f = mvFrom(m), t = mvTo(m), p = b[f], cap = b[t];
     h1 ^= Z1[p][f] ^ Z1[p][t] ^ ZS1; h2 ^= Z2[p][f] ^ Z2[p][t] ^ ZS2;
     score += pv(p, t) - pv(p, f);
-    if (cap) { h1 ^= Z1[cap][t]; h2 ^= Z2[cap][t]; score -= pv(cap, t); }
+    if (cap) { h1 ^= Z1[cap][t]; h2 ^= Z2[cap][t]; score -= pv(cap, t); pieces--; }
     make(b, m); stm = 1 - stm;
     return cap;
   };
@@ -80,8 +105,27 @@ export function think({ board, side, level = 'mid', now = () => Date.now(), rand
     const f = mvFrom(m), t = mvTo(m), p = b[f];
     h1 ^= Z1[p][f] ^ Z1[p][t] ^ ZS1; h2 ^= Z2[p][f] ^ Z2[p][t] ^ ZS2;
     score -= pv(p, t) - pv(p, f);
-    if (cap) { h1 ^= Z1[cap][t]; h2 ^= Z2[cap][t]; score += pv(cap, t); }
+    if (cap) { h1 ^= Z1[cap][t]; h2 ^= Z2[cap][t]; score += pv(cap, t); pieces++; }
   };
+
+  /* 当前局面(还没进线,下标就是线长 n)是不是走回了线上的某个局面。
+   * 是的话按 judgeRepeat 的规矩给分(站在轮到走的一方看),不是返回 null。
+   * 同一方走的局面隔一步出现,一圈至少四步;子数变了往前就不可能再重复。 */
+  function repeatScore(chk) {
+    const n = LH1.length;
+    for (let j = n - 4; j >= 0 && LP[j] === pieces; j -= 2) {
+      if (LH1[j] !== h1 || LH2[j] !== h2) continue;
+      // 这一圈是 j+1..n 这几步。第 i 步是不是将军 = 走完之后轮到的一方被将着。
+      // 第 n 步是对手走的,往前隔一步交替。
+      let them = true, me = true;
+      for (let i = n; i > j; i--) if (!(i === n ? chk : LC[i])) { if ((n - i) % 2 === 0) them = false; else me = false; }
+      if (them !== me) return them ? REP_LOSS : -REP_LOSS;     // 对手长将:我赢;我长将:我输
+      return 0;
+    }
+    return null;
+  }
+  const enter = (chk) => { LH1.push(h1); LH2.push(h2); LP.push(pieces); LC.push(chk); };
+  const leave = () => { LH1.pop(); LH2.pop(); LP.pop(); LC.pop(); };
   const evalSide = () => (stm === RED ? score : -score);
   const mvv = (m) => { const v = b[mvTo(m)]; return v ? VAL[typeOf(v)] * 16 - VAL[typeOf(b[mvFrom(m)])] / 8 : 0; };
 
@@ -111,8 +155,9 @@ export function think({ board, side, level = 'mid', now = () => Date.now(), rand
   }
 
   function search(depth, alpha, beta, ply) {
-    if (ply > 0 && path.includes(h1)) return 0;               // 自己绕回来了,当和棋
     const chk = inCheck(b, stm);
+    const rep = repeatScore(chk);                             // 走回了出现过的局面:按长将 / 和棋判
+    if (rep !== null) return rep;
     if (chk && ply < 24) depth++;                            // 被将时多算一层,免得看漏杀棋
     if (depth <= 0) return quiesce(alpha, beta, ply);
     if ((++nodes & 2047) === 0 && now() > deadline) stop = true;
@@ -129,14 +174,14 @@ export function think({ board, side, level = 'mid', now = () => Date.now(), rand
     }
 
     let best = -MATE, bestMove = 0, legal = 0;
-    path.push(h1);
+    enter(chk);
     for (const m of order(genMoves(b, stm), ttMove, ply)) {
       const me = stm, cap = doMove(m);
       if (inCheck(b, me)) { undoMove(m, cap); continue; }
       legal++;
       const v = -search(depth - 1, -beta, -alpha, ply + 1);
       undoMove(m, cap);
-      if (stop) { path.pop(); return 0; }
+      if (stop) { leave(); return 0; }
       if (v > best) { best = v; bestMove = m; }
       if (v > alpha) alpha = v;
       if (alpha >= beta) {
@@ -144,7 +189,7 @@ export function think({ board, side, level = 'mid', now = () => Date.now(), rand
         break;
       }
     }
-    path.pop();
+    leave();
     if (!legal) return -MATE + ply;                           // 走不动:绝杀和困毙都是输
     tKey[slot] = h2; tMove[slot] = bestMove; tScore[slot] = best; tDepth[slot] = depth;
     tFlag[slot] = best <= a0 ? 2 : best >= beta ? 1 : 0;
@@ -154,6 +199,7 @@ export function think({ board, side, level = 'mid', now = () => Date.now(), rand
   // 根节点:逐层加深,时间到了就用上一层算完的结果
   let rootMoves = genMoves(b, stm).filter((m) => { const me = stm, cap = doMove(m); const ok = !inCheck(b, me); undoMove(m, cap); return ok; });
   if (!rootMoves.length) return { move: 0, score: -MATE, depth: 0, nodes };
+  enter(inCheck(b, stm));                                    // 当前局面也在线上,走回来同样算重复
   let bestMove = rootMoves[0], bestScore = -MATE, done = 0;
   for (let d = 1; d <= L.depth; d++) {
     const scored = [];

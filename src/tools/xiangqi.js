@@ -4,7 +4,7 @@
 import { el, clear } from '../ui/index.js';
 import { xqBoardView, WOODS } from '../ui/xqBoard.js';
 import { clack } from '../ui/goBoard.js';
-import { replay, status, judgeRepeat, legalMoves, mvFrom, mvTo, sideOf, RED } from '../lib/xiangqi.js';
+import { replay, historyOf, status, judgeRepeat, legalMoves, mvFrom, mvTo, sideOf, RED } from '../lib/xiangqi.js';
 import { think, LEVELS } from '../lib/xqai.js';
 
 const CSS = `
@@ -95,19 +95,22 @@ export default {
       render();
     }
     function cancelAi() { reqId++; thinking = false; }
+    // 电脑要知道这盘棋之前走过哪些局面,才不会自己走进长将判负、或把赢棋绕成重复和棋
+    let lastMsg = null;
+    const aiDone = (r) => { if (r.id !== reqId) return; thinking = false; if (r.move) play(r.move); else render(); };
+    const aiLocal = (msg) => setTimeout(() => aiDone({ id: msg.id, ...think(msg) }), 30);   // 没有后台线程就在这里算,会卡一下
     function startAi() {
       thinking = true;
-      const id = ++reqId, msg = { id, board: Array.from(g.board), side: g.side, level: st.level };
-      const done = (r) => { if (r.id !== reqId) return; thinking = false; if (r.move) play(r.move); else render(); };
-      const local = () => setTimeout(() => done({ id, ...think(msg) }), 30);   // 没有后台线程就在这里算,会卡一下
+      const msg = lastMsg = { id: ++reqId, board: Array.from(g.board), side: g.side, level: st.level, history: historyOf(g) };
       try {
         if (!worker && typeof Worker !== 'undefined') {
           worker = new Worker(new URL('../workers/xqai.js', import.meta.url), { type: 'module' });
-          worker.onmessage = (e) => done(e.data);
-          worker.onerror = () => { worker = null; if (thinking) local(); };
+          worker.onmessage = (e) => aiDone(e.data);
+          // 用最近这一次的请求兜底。以前绑的是第一次的,编号对不上,结果被丢掉,电脑就卡在「思考中」
+          worker.onerror = () => { worker?.terminate(); worker = null; if (thinking && lastMsg) aiLocal(lastMsg); };
         }
-        if (worker) worker.postMessage(msg); else local();
-      } catch { worker = null; local(); }
+        if (worker) worker.postMessage(msg); else aiLocal(msg);
+      } catch { worker = null; aiLocal(msg); }
     }
     function undo() {
       if (!canUndo()) return;

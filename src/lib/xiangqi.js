@@ -209,16 +209,20 @@ export function judgeRepeat(keys, checks) {
   return { winner: -1, reason: '重复局面,和棋' };
 }
 
-/** 从头摆一遍。返回最终局面和每一手的记谱、是否将军;遇到不合规则的走法就停。 */
+/** 从头摆一遍。返回最终局面和每一手的记谱、是否将军;遇到不合规则的走法就停。
+ * boards[i] 是第 i 手之后的局面快照(boards[0] 开局),给电脑认重复局面用。 */
 export function replay(moves) {
-  const b = fromFen(START), names = [], keys = [keyOf(b, RED)], checks = [false];
+  const b = fromFen(START), names = [], keys = [keyOf(b, RED)], checks = [false], boards = [Int8Array.from(b)];
   let side = RED, valid = 0;
   for (const m of moves) {
     if (!legalMoves(b, side).includes(m)) break;
     names.push(moveName(b, m)); make(b, m); side = 1 - side;
-    keys.push(keyOf(b, side)); checks.push(inCheck(b, side)); valid++;
+    keys.push(keyOf(b, side)); checks.push(inCheck(b, side)); boards.push(Int8Array.from(b)); valid++;
   }
-  return { board: b, side, names, keys, checks, valid };
+  return { board: b, side, names, keys, checks, boards, valid };
 }
+
+/** 当前局面之前的对局局面,think 的 history 参数要的形状。红先,所以第 i 个局面轮到 i % 2。 */
+export const historyOf = (g) => g.boards.slice(0, -1).map((bd, i) => ({ board: Array.from(bd), side: i % 2, check: g.checks[i] }));
 
 export const PIECE_TEXT = (p) => NAMES[typeOf(p)][sideOf(p)];
