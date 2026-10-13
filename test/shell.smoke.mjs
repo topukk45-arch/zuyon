@@ -114,3 +114,14 @@ ng().click();
 [...document.querySelectorAll('.go .ask .btn')].find((b) => b.textContent === '取消').click();
 const askBox = document.querySelector('.go .ask');
 console.log('取消即消失:', askBox.hidden && dom.window.getComputedStyle(askBox).display === 'none' && /共 [1-9]\d* 手/.test(t()) ? 'ok' : 'FAIL —— display=' + dom.window.getComputedStyle(askBox).display);
+
+// 改服务器时间:挂得上,快捷按钮出命令,默认第一个服带 +0800
+location.hash = '/t/settime';
+await new Promise(r => setTimeout(r, 150));
+[...document.querySelectorAll('.st .grid .btn')].find((b) => b.textContent === '下一个 0 点').click();
+await new Promise(r => setTimeout(r, 30));
+const cmd = document.querySelector('.st .cmd')?.textContent ?? '';
+console.log('改时间命令:', /^sudo date -s "\d{4}-\d{2}-\d{2} 23:59:50 \+0800"$/.test(cmd) ? 'ok' : 'FAIL —— ' + cmd);
+console.log('搜「改时间」:', (await import('../src/shell/search.js')).search('改时间').map(x=>x.id).join(',') === 'settime' ? 'ok' : 'FAIL');
+location.hash = '/';
+await new Promise(r => setTimeout(r, 60));

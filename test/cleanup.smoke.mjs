@@ -19,7 +19,7 @@ start(document.getElementById('app'));
 await new Promise(r => setTimeout(r, 50));
 const base = countPaste();
 
-for (const id of ['color-mixer', 'color-picker', 'charcard', 'go', 'color-mixer', 'contrast', 'charcard', 'go']) {
+for (const id of ['color-mixer', 'color-picker', 'charcard', 'go', 'settime', 'color-mixer', 'contrast', 'charcard', 'go', 'settime']) {
   location.hash = '/t/' + id;
   await new Promise(r => setTimeout(r, 120));
 }

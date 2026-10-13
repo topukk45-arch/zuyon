@@ -29,6 +29,13 @@ const tools = [
     load: () => import('../tools/timestamp.js'),
   },
   {
+    id: 'settime',
+    name: '改服务器时间',
+    desc: '按各服时区生成 sudo date -s 命令,防止时间倒退',
+    keywords: ['改时间', '调时间', '拨时间', '服务器时间', '测试服', 'date', 'sudo', '时区', '跨天', '周一', '月末', '活动', '清服', '夏令时'],
+    load: () => import('../tools/settime.js'),
+  },
+  {
     id: 'color-mixer',
     name: '调色台',
     desc: '颜料混合、光混合、算术平均三模型对比',
