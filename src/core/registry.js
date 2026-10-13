@@ -66,6 +66,13 @@ const tools = [
     load: () => import('../tools/contrast.js'),
   },
   {
+    id: 'xiangqi',
+    name: '中国象棋',
+    desc: '人机对弈三档难度,或一部手机两人对下',
+    keywords: ['象棋', '中国象棋', '下棋', '人机', '对弈', '双人', '残局', 'xiangqi', 'chess'],
+    load: () => import('../tools/xiangqi.js'),
+  },
+  {
     id: 'go',
     name: '围棋摆棋',
     desc: '9/13/19 路摆棋复盘,带形势估算与 SGF',

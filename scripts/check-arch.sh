@@ -28,13 +28,14 @@ SHELL_=(src/shell/*.js)
 LIB=(src/lib/*.js)
 UI=(src/ui/*.js)
 CORE=(src/core/*.js)
+WORKERS=(src/workers/*.js)
 
 rule 1 "tools/ 不许 import 另一个 tools/"        "from '\.{1,2}/tools/" "${TOOLS[@]}"
 rule 2 "shell/ 不许直接 import 具体工具"          "tools/"               "${SHELL_[@]}"
-rule 3 "lib/ 不许出现 document / window"          "\b(document|window|navigator|localStorage)\b" "${LIB[@]}"
+rule 3 "lib/ 与 workers/ 不许出现 document / window" "\b(document|window|navigator|localStorage)\b" "${LIB[@]}" "${WORKERS[@]}"
 rule 4 "工具与 ui 不许直接 import platform"       "core/platform"        "${TOOLS[@]}" "${UI[@]}"
 rule 5 "不联网:不许出现网络 API 与外链"           "fetch\(|XMLHttpRequest|new WebSocket|https?://[a-z]" \
-       "${TOOLS[@]}" "${SHELL_[@]}" "${LIB[@]}" "${UI[@]}" "${CORE[@]}" index.html
+       "${TOOLS[@]}" "${SHELL_[@]}" "${LIB[@]}" "${UI[@]}" "${CORE[@]}" "${WORKERS[@]}" index.html
 rule 6 "工具里不许写字面量颜色(用 token)"        "background:\s*#[0-9a-fA-F]{3,6}|color:\s*#[0-9a-fA-F]{3,6}" "${TOOLS[@]}"
 
 echo "[7] index.html 不许有内联脚本(script-src self 会挡掉它,页面会全白)"

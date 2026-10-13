@@ -125,3 +125,12 @@ console.log('改时间命令:', /^sudo date -s "\d{4}-\d{2}-\d{2} 23:59:50 \+080
 console.log('搜「改时间」:', (await import('../src/shell/search.js')).search('改时间').map(x=>x.id).join(',') === 'settime' ? 'ok' : 'FAIL');
 location.hash = '/';
 await new Promise(r => setTimeout(r, 60));
+
+// 中国象棋:挂得上,默认人机执红、轮到我走,悔棋按钮在开局时不可点
+location.hash = '/t/xiangqi';
+await new Promise(r => setTimeout(r, 150));
+const undoB = [...document.querySelectorAll('.xq .btn')].find((b) => b.textContent.startsWith('悔棋'));
+console.log('象棋挂载  :', /轮到你走/.test(t()) && /悔棋\(剩 3 次\)/.test(t()) && undoB?.disabled && document.querySelector('.xq canvas') ? 'ok' : 'FAIL\n' + t());
+console.log('搜「象棋」:', (await import('../src/shell/search.js')).search('象棋').map(x=>x.id).join(',') === 'xiangqi' ? 'ok' : 'FAIL');
+location.hash = '/';
+await new Promise(r => setTimeout(r, 60));
